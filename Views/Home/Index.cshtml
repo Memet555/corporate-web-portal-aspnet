@@ -1,0 +1,1059 @@
+@model WebPortal.Controllers.HomeViewModel
+@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+@Html.AntiForgeryToken()
+
+<style>
+/* Duyuru Kartları Grid Layout */
+.announcement-card-compact {
+    height: auto;
+    min-height: 140px;
+    transition: all 0.3s ease;
+    border: 1px solid #e9ecef;
+    width: 100%;
+}
+
+.announcement-card-compact .card-body {
+    padding: 0.75rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Duyuru Kartları Grid Layout - Bootstrap ile uyumlu */
+#announcements-container .row.g-3 {
+    margin: 0;
+    width: 100%;
+}
+
+#announcements-container .col-12.col-md-6.col-lg-4 {
+    padding: 0.75rem;
+    margin-bottom: 0;
+}
+
+/* Scrollbar'ları kaldır */
+.announcement-card-compact {
+    overflow: hidden !important;
+}
+
+.announcement-card-compact .card-body {
+    overflow: hidden !important;
+}
+
+.announcement-card-compact * {
+    overflow: hidden !important;
+}
+
+/* Bootstrap ve diğer CSS'leri override et */
+#announcements-container .card,
+#announcements-container .card-body,
+#announcements-container .card * {
+    overflow: hidden !important;
+    scrollbar-width: none !important; /* Firefox */
+    -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+#announcements-container .card::-webkit-scrollbar,
+#announcements-container .card-body::-webkit-scrollbar {
+    display: none !important; /* Chrome/Safari/Opera */
+}
+
+/* Bootstrap grid sınıflarını da hedefle */
+#announcements-container .row,
+#announcements-container .col-12,
+#announcements-container .col-md-6,
+#announcements-container .col-lg-4 {
+    overflow: hidden !important;
+}
+
+/* Tüm duyuru kartı elementlerini hedefle */
+#announcements-container .announcement-card,
+#announcements-container .announcement-card-compact,
+#announcements-container .announcement-card *,
+#announcements-container .announcement-card-compact * {
+    overflow: hidden !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+#announcements-container .announcement-card::-webkit-scrollbar,
+#announcements-container .announcement-card-compact::-webkit-scrollbar,
+#announcements-container .announcement-card *::-webkit-scrollbar,
+#announcements-container .announcement-card-compact *::-webkit-scrollbar {
+    display: none !important;
+}
+
+.announcement-img {
+    width: 45px;
+    height: 45px;
+    flex-shrink: 0;
+}
+
+.mini-photo-compact {
+    width: 45px;
+    height: 45px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.no-photo-placeholder-compact {
+    width: 45px;
+    height: 45px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.no-photo-text-compact {
+    font-weight: bold;
+    color: #6c757d;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.announcement-date {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.announcement-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    min-height: 2.4em;
+}
+
+.announcement-files {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.admin-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.admin-buttons .btn {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 6px;
+}
+
+.announcement-card-compact:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    border-color: #0d6efd;
+}
+
+.admin-buttons .btn:hover {
+    transform: scale(1.05);
+}
+
+.announcement-card-compact .btn-outline-primary {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.announcement-card-compact .btn-outline-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(13, 110, 253, 0.25);
+}
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sol Sütun: Portal Bölümleri ve Duyurular -->
+        <div class="col-md-8">
+            <!-- Sidebar Menü Yönetimi -->
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="sidebar-menu-management">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4><i class="fas fa-bars me-2"></i>Sidebar Menü Yönetimi</h4>
+                        <a href="/SidebarMenu" class="btn btn-success btn-sm">
+                            <i class="fas fa-cog me-1"></i>Menü Yönetimi
+                        </a>
+                    </div>
+                    <p class="mb-0 opacity-75">Sidebar menülerini ekleyin, düzenleyin ve sıralayın</p>
+                </div>
+            }
+
+            <!-- Portal Bölümleri -->
+            <div class="content-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="fas fa-th-large"></i>Portal Bölümleri</h4>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/PortalBolumAdmin" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Bölüm Ekle
+                        </a>
+                    }
+                </div>
+                <div class="portal-sections" id="dynamic-portal-section-grid">
+                    <!-- Portal bölümü kartları dinamik olarak yüklenecek -->
+                </div>
+            </div>
+
+            <!-- Duyurular -->
+            <div class="content-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="fas fa-bell"></i>Duyurular</h4>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a href="/Duyuru/List" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>Duyuru Ekle
+                        </a>
+                    }
+                </div>
+                                <div id="announcements-container">
+                    <!-- Duyurular dinamik olarak yüklenecek -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Sütun: Misyon/Vizyon ve Yemek Menüsü -->
+        <div class="col-md-4">
+            <!-- Misyon & Vizyon -->
+            <div class="mission-vision-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-bullseye me-2"></i>Misyon & Vizyon</h5>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <button id="edit-mission-vision-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#missionVisionModal">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    }
+                </div>
+                <h6>Misyonumuz</h6>
+                <p id="mission-text">Müşterilerimize en yenilikçi ve kaliteli çözümleri sunarak sektörde öncü olmak.</p>
+                <hr>
+                <h6>Vizyonumuz</h6>
+                <p id="vision-text">Teknolojiyi insan odaklı bir yaklaşımla birleştirerek sürdürülebilir bir gelecek inşa etmek.</p>
+            </div>
+
+            <!-- Yemek ve Kahvaltı Menüsü -->
+            <div class="food-menu-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-utensils me-2"></i>Yemek ve Kahvaltı Menüsü</h5>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="food-menu-buttons">
+                            <button id="upload-food-menu-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#foodMenuModal">
+                                <i class="fas fa-upload me-1"></i>Yemek
+                            </button>
+                            <button id="upload-breakfast-menu-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#breakfastMenuModal">
+                                <i class="fas fa-coffee me-1"></i>Kahvaltı
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div id="food-breakfast-menu-container">
+                    <div class="text-center text-muted py-3">
+                        <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Portal Bölümü Dosya Yönetim Modalı -->
+<div class="modal fade" id="portalSectionFilesModal" tabindex="-1" aria-labelledby="portalSectionFilesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="portalSectionFilesModalLabel">Bölüm Dosyaları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body" id="portal-section-files-modal-body">
+                <div class="text-center text-muted py-5">Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Duyuru Ekle/Düzenle Modalı -->
+<div class="modal fade" id="announcementModal" tabindex="-1" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">Duyuru Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="announcement-form" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" id="duyuru-id" />
+                    <input type="hidden" name="RemovedOldFotos" id="removed-old-fotos" value="" />
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="duyuru-baslik" class="form-label">Başlık</label>
+                                <input type="text" class="form-control" id="duyuru-baslik" name="Baslik" required />
+                            </div>
+                            <div class="mb-3">
+                                <label for="duyuru-aciklama" class="form-label">Açıklama</label>
+                                <textarea class="form-control" id="duyuru-aciklama" name="Aciklama" rows="5" required></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="duyuru-foto" class="form-label">Fotoğraflar</label>
+                                <input type="file" class="form-control" id="duyuru-foto" name="fotolar" accept="image/*" multiple />
+                                <small class="form-text text-muted">Birden fazla fotoğraf seçebilirsiniz</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="duyuru-dosya" class="form-label">Dosyalar</label>
+                                <input type="file" class="form-control" id="duyuru-dosya" name="dosyalar" accept=".pdf,.zip,.rar,.xls,.xlsx,.csv,.doc,.docx" multiple />
+                                <small class="form-text text-muted">PDF, ZIP, Excel vb. dosyalar</small>
+                            </div>
+                            
+                            <!-- Mini Fotoğraf Seçimi -->
+                            <div class="mb-3">
+                                <label class="form-label">Mini Fotoğraf Seçimi</label>
+                                <div id="mini-foto-preview" class="border rounded p-2" style="min-height: 100px;">
+                                    <small class="text-muted">Fotoğraf yükleyin ve mini fotoğraf seçin</small>
+                                </div>
+                                <input type="hidden" name="MiniFotoIndex" id="mini-foto-index" value="0" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Misyon & Vizyon Düzenleme Modalı -->
+<div class="modal fade" id="missionVisionModal" tabindex="-1" aria-labelledby="missionVisionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="missionVisionModalLabel">Misyon & Vizyon Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="mission-vision-form">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="mission-input" class="form-label">Misyonumuz</label>
+                        <textarea class="form-control" id="mission-input" name="misyon" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="vision-input" class="form-label">Vizyonumuz</label>
+                        <textarea class="form-control" id="vision-input" name="vizyon" rows="3" required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yemek Listesi Yükleme Modalı -->
+<div class="modal fade" id="foodMenuModal" tabindex="-1" aria-labelledby="foodMenuModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="foodMenuModalLabel">Yemek Listesi Yükle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="food-menu-form" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="menu-tarih" name="tarih" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <div class="mb-3">
+                        <label for="menu-dosya" class="form-label">Yemek Listesi Dosyası</label>
+                        <input type="file" class="form-control" id="menu-dosya" name="dosya" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+                        <small class="form-text text-muted">Sadece Excel dosyası (.xls, .xlsx) yükleyebilirsiniz.</small>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Yükle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kahvaltı Listesi Yükleme Modalı -->
+<div class="modal fade" id="breakfastMenuModal" tabindex="-1" aria-labelledby="breakfastMenuModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="breakfastMenuModalLabel">Kahvaltı Listesi Yükle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="breakfast-menu-form" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="breakfast-menu-tarih" name="tarih" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    <div class="mb-3">
+                        <label for="breakfast-menu-dosya" class="form-label">Kahvaltı Listesi Dosyası</label>
+                        <input type="file" class="form-control" id="breakfast-menu-dosya" name="dosya" accept=".xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+                        <small class="form-text text-muted">Sadece Excel dosyası (.xls, .xlsx) yükleyebilirsiniz.</small>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">Yükle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Duyuru Silme Onayı
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-question-circle fa-3x text-warning"></i>
+                </div>
+                <h6 id="deleteConfirmMessage" class="mb-2"></h6>
+                <p id="deleteConfirmDetails" class="text-muted small mb-0"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>Evet, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(function() {
+    // Portal bölümlerini dinamik yükle
+    $.get('/Home/GetPortalSections', function(response) {
+        // response bir array olmalı, eğer değilse hata kontrolü yap
+        var sections = Array.isArray(response) ? response : [];
+        var grid = '';
+        if (sections.length === 0) {
+            grid = '<span class="text-muted">Hiç bölüm tanımlı değil.</span>';
+        } else {
+            sections.forEach(function(sec) {
+                grid += `
+                <div class="col-12 col-md-6 col-lg-4">
+                    <a href="/PortalBolum/Detay/${sec.id}" class="text-decoration-none">
+                        <div class="card shadow-sm section-card-hover">
+                            <div class="card-body">
+                                <h6 class="mb-1 fw-bold">${sec.name}</h6>
+                                ${sec.description ? `<small class="text-muted">${sec.description}</small>` : ''}
+                            </div>
+                        </div>
+                    </a>
+                </div>`;
+            });
+        }
+        $('#dynamic-portal-section-grid').html(grid);
+    });
+
+    // Admin kontrolü
+    var isAdmin = @(User.IsInRole("Admin").ToString().ToLower());
+    
+    // Duyuruları dinamik yükle
+    function loadAnnouncements() {
+        $.get('/Duyuru/GetDuyurular', function(response) {
+            // response bir array olmalı, eğer değilse hata kontrolü yap
+            var duyurular = Array.isArray(response) ? response : [];
+            var html = '';
+            if (!duyurular || duyurular.length === 0) {
+                html = '<div class="text-center py-4"><i class="fas fa-inbox fa-2x text-muted mb-3"></i><h6 class="text-muted">Henüz duyuru eklenmemiş</h6><p class="text-muted small">İlk duyuruyu eklemek için yukarıdaki "Duyuru Ekle" butonuna tıklayın.</p></div>';
+            } else {
+                // Grid yapısı oluştur
+                html = '<div class="row g-3">';
+                duyurular.slice(0, 6).forEach(function(d) {
+                    html += `
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="card shadow-sm announcement-card announcement-card-compact h-100">
+                                <div class="card-body p-3 d-flex flex-column">
+                                    <div class="d-flex align-items-start mb-3">
+                                        <!-- Mini Fotoğraf Alanı (Sol) -->
+                                        <div class="announcement-img me-3 flex-shrink-0">
+                                            ${(d.files && d.files.length > 0 && d.files.some(f => f.fileType === "Photo")) ?
+                                                `<img src="${d.files[d.miniFotoIndex || 0].filePath}" alt="Mini Fotoğraf" class="mini-photo-compact">` :
+                                                `<div class="no-photo-placeholder-compact"><span class="no-photo-text-compact">BOSSA</span></div>`}
+                                        </div>
+
+                                        <!-- İçerik Alanı (Orta) -->
+                                        <div class="flex-grow-1 me-2">
+                                            <!-- Tarih -->
+                                            <div class="announcement-date mb-2">
+                                                <small class="text-muted fw-medium">
+                                                    <i class="fas fa-calendar me-1"></i>${d.tarih ? new Date(d.tarih).toLocaleDateString('tr-TR') : ''}
+                                                </small>
+                                            </div>
+                                            
+                                            <!-- Başlık -->
+                                            <h6 class="announcement-title mb-2 text-truncate">${d.baslik}</h6>
+                                            
+                                            <!-- Dosya Sayısı -->
+                                            ${(d.files && d.files.length > 0) ? 
+                                                `<div class="announcement-files mb-2"><small class="text-muted"><i class="fas fa-paperclip me-1"></i>${d.files.length} dosya</small></div>` : 
+                                                `<div class="announcement-files mb-2"><small class="text-muted"><i class="fas fa-paperclip me-1"></i>0 dosya</small></div>`}
+                                        </div>
+
+                                        <!-- Admin Butonları (Sağ) -->
+                                        ${isAdmin ? `
+                                            <div class="admin-buttons flex-shrink-0">
+                                                <button class="btn btn-sm btn-outline-secondary edit-announcement-btn" data-id="${d.id}" title="Düzenle">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger delete-announcement-btn" data-id="${d.id}" title="Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <!-- Detay Butonu (Alt) -->
+                                    <div class="mt-auto">
+                                        <a href="/Duyuru/Detay/${d.id}" class="btn btn-outline-primary btn-sm w-100">
+                                            <i class="fas fa-eye me-1"></i>Detayları Görüntüle
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                html += '</div>';
+                
+                // 6'dan fazla duyuru varsa "Tümünü Görüntüle" butonu ekle
+                if (duyurular.length > 6) {
+                    html += '<div class="text-center mt-3"><a href="/Duyuru/List" class="btn btn-outline-secondary"><i class="fas fa-list me-1"></i>Tüm Duyuruları Görüntüle</a></div>';
+                }
+            }
+            $('#announcements-container').html(html);
+        });
+    }
+    loadAnnouncements();
+
+    // Fotoğraf seçilince önizleme ve mini fotoğraf seçimi
+    $('#duyuru-foto').on('change', function() {
+        var files = this.files;
+        var preview = $('#mini-foto-preview');
+        preview.empty();
+        if (files && files.length > 0) {
+            for (let i = 0; i < files.length; i++) {
+                let reader = new FileReader();
+                reader.onload = function(e) {
+                    var radio = `<input type='radio' name='mini-foto-radio' value='${i}' ${i===0 ? 'checked' : ''} style='margin-right:4px;' />`;
+                    var img = `<img src='${e.target.result}' style='width:56px;height:56px;object-fit:cover;border-radius:6px;border:2px solid #0d6efd;margin-right:4px;' />`;
+                    var wrapper = $(`<label class='d-flex align-items-center' style='cursor:pointer;'>${radio}${img}</label>`);
+                    preview.append(wrapper);
+                };
+                reader.readAsDataURL(files[i]);
+            }
+        }
+        // Varsayılan olarak ilk fotoğraf seçili
+        $('#mini-foto-index').val(0);
+    });
+    // Mini fotoğraf radio değişince hidden input güncelle
+    $(document).on('change', 'input[name="mini-foto-radio"]', function() {
+        $('#mini-foto-index').val($(this).val());
+    });
+
+    // Duyuru ekleme formu gönderimi
+    var isSubmitting = false;
+    $('#announcement-form').on('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (isSubmitting) {
+            return false; // Çift gönderimi engelle
+        }
+
+        isSubmitting = true;
+
+        // Form submit butonunu devre dışı bırak
+        var submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true);
+        submitBtn.text('Kaydediliyor...');
+
+        var formData = new FormData(this);
+        var id = $('#duyuru-id').val();
+        var url = id ? '/Duyuru/Edit' : '/Duyuru/Add';
+        
+        // Mini foto index'i ekle
+        var selectedMiniFoto = $('input[name="mini-foto-radio"]:checked').val();
+        if (selectedMiniFoto !== undefined) {
+            formData.set('MiniFotoIndex', selectedMiniFoto);
+        } else {
+            formData.set('MiniFotoIndex', '0');
+        }
+        
+        // Silinecek eski fotoğrafları ekle
+        formData.set('RemovedOldFotos', $('#removed-old-fotos').val());
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                if (res.success) {
+                                            var modal = bootstrap.Modal.getInstance(document.getElementById('announcementModal'));
+                        if (modal) modal.hide();
+                    $('#announcement-form')[0].reset();
+                    $('#duyuru-id').val('');
+                    $('#removed-old-fotos').val('');
+                    $('#mini-foto-preview').empty();
+                    loadAnnouncements();
+                } else {
+                    alert(res.message || 'Bir hata oluştu.');
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            },
+            complete: function() {
+                // Form submit butonunu tekrar etkinleştir
+                submitBtn.prop('disabled', false);
+                submitBtn.text('Kaydet');
+                isSubmitting = false;
+            }
+        });
+    });
+
+    // Duyuru kartına tıklama (detay sayfasına git)
+    $(document).on('click', '.announcement-card-compact', function(e) {
+        // Admin butonlarına tıklandıysa kartın tıklanmasını engelle
+        if ($(e.target).closest('.admin-buttons').length > 0 || 
+            $(e.target).closest('.btn-outline-primary').length > 0) {
+            return;
+        }
+        
+        var id = $(this).find('.edit-announcement-btn').data('id');
+        if (id) {
+            window.location.href = '/Duyuru/Detay/' + id;
+        }
+    });
+
+    // Duyuru silme
+    $(document).on('click', '.delete-announcement-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('id');
+        var card = $(this).closest('.announcement-card');
+        var title = card.find('.announcement-title').text();
+        
+        $('#deleteConfirmMessage').text(`"${title}" başlıklı duyuruyu silmek istediğinizden emin misiniz?`);
+        $('#deleteConfirmDetails').text('Bu işlem geri alınamaz.');
+        $('#confirmDeleteBtn').data('id', id);
+        $('#deleteConfirmModal').modal('show');
+    });
+
+
+
+    // Mission & Vision functionality
+    function loadMissionVision() {
+        $.get('/Home/GetMissionVision', function(data) {
+            $('#mission-text').text(data.misyon);
+            $('#vision-text').text(data.vizyon);
+        });
+    }
+    loadMissionVision();
+
+    // Mission & Vision update form
+    $('#mission-vision-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = {
+            misyon: $('#mission-input').val(),
+            vizyon: $('#vision-input').val()
+        };
+
+        $.ajax({
+            url: '/Home/UpdateMissionVision',
+            type: 'POST',
+            data: JSON.stringify(formData),
+            contentType: 'application/json',
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(res) {
+                if (res.success) {
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('missionVisionModal'));
+                    if (modal) modal.hide();
+                    loadMissionVision();
+                    alert('Misyon ve Vizyon başarıyla güncellendi.');
+                } else {
+                    alert(res.message || 'Güncelleme başarısız.');
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            }
+        });
+    });
+
+    // Yemek ve kahvaltı menüsünü birlikte yükle ve göster
+    function loadFoodAndBreakfastMenus() {
+        var today = new Date().toISOString().slice(0, 10);
+        console.log('Yemek menüsü yükleniyor...', today);
+
+        $.when(
+            $.get('/Home/GetTodayFoodMenu'),
+            $.get('/Home/GetTodayBreakfastMenu')
+        ).done(function(foodData, breakfastData) {
+            var food = foodData[0];
+            var breakfast = breakfastData[0];
+            console.log('Yemek menüsü data:', food);
+            console.log('Kahvaltı menüsü data:', breakfast);
+            var html = '';
+
+            if ((food.success && food.menu) || (breakfast.success && breakfast.menu)) {
+                var tarih = food.tarih || breakfast.tarih || today;
+                var gunAdi = food.gunAdi || breakfast.gunAdi || new Date(tarih).toLocaleDateString('tr-TR', { weekday: 'long' });
+
+                html += `<div class="menu-item mb-3 p-3 border rounded bg-light">`;
+                html += `<h6><i class="fas fa-utensils me-2"></i>${gunAdi} için yemek menüsü</h6>`;
+                if (food.success && food.menu) {
+                    if (food.menu.MenuIcerigi && food.menu.MenuIcerigi.trim() !== '') {
+                        html += `<p class="mb-2"><strong>Menü:</strong> ${food.menu.MenuIcerigi}</p>`;
+                    } else {
+                        // Detaylı menü bilgilerini göster
+                        var menuDetails = [];
+                        if (food.menu.Corba) menuDetails.push(`Çorba: ${food.menu.Corba}`);
+                        if (food.menu.AnaYemek1) menuDetails.push(`Ana Yemek 1: ${food.menu.AnaYemek1}`);
+                        if (food.menu.AnaYemek2) menuDetails.push(`Ana Yemek 2: ${food.menu.AnaYemek2}`);
+                        if (food.menu.Pilav) menuDetails.push(`Pilav: ${food.menu.Pilav}`);
+                        if (food.menu.Tatli) menuDetails.push(`Tatlı: ${food.menu.Tatli}`);
+
+                        if (menuDetails.length > 0) {
+                            html += `<div class="mb-2">`;
+                            menuDetails.forEach(detail => {
+                                html += `<div class="small">${detail}</div>`;
+                            });
+                            html += `</div>`;
+                        } else {
+                            html += `<p class="text-muted mb-2">Menü içeriği henüz eklenmemiş.</p>`;
+                        }
+                    }
+
+                    if (food.menu.dosyaYolu) {
+                        html += `<div class="d-flex justify-content-between align-items-center">`;
+                        html += `<a href="/uploads/yemek-listesi/${food.menu.dosyaYolu}" class="btn btn-sm btn-outline-primary" download>`;
+                        html += `<i class="fas fa-download me-1"></i>İndir</a>`;
+                        html += `<div class="upload-info text-muted"><small>${food.menu.yukleyenKullanici || 'Admin'} tarafından yüklendi</small></div>`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<p class="text-muted mb-2">Bugün için yemek listesi bulunamadı.</p>`;
+                }
+                html += `</div>`;
+
+                html += `<div class="menu-item p-3 border rounded bg-light">`;
+                html += `<h6><i class="fas fa-coffee me-2"></i>${gunAdi} için kahvaltı menüsü</h6>`;
+               if (breakfast.success && breakfast.menu) {
+                    if (breakfast.menu.MenuIcerigi && breakfast.menu.MenuIcerigi.trim() !== '') {
+                        html += `<p class="mb-2"><strong>Menü:</strong> ${breakfast.menu.MenuIcerigi}</p>`;
+                    } else {
+                        // Detaylı menü bilgilerini göster
+                        var menuDetails = [];
+                        if (breakfast.menu.Zeytin) menuDetails.push(`Zeytin: ${breakfast.menu.Zeytin}`);
+                        if (breakfast.menu.Peynir) menuDetails.push(`Peynir: ${breakfast.menu.Peynir}`);
+                        if (breakfast.menu.Bal) menuDetails.push(`Bal: ${breakfast.menu.Bal}`);
+                        if (breakfast.menu.Kaymak) menuDetails.push(`Kaymak: ${breakfast.menu.Kaymak}`);
+                        if (breakfast.menu.Yumurta) menuDetails.push(`Yumurta: ${breakfast.menu.Yumurta}`);
+                        if (breakfast.menu.Domates) menuDetails.push(`Domates: ${breakfast.menu.Domates}`);
+                        if (breakfast.menu.Salatalik) menuDetails.push(`Salatalık: ${breakfast.menu.Salatalik}`);
+
+                        if (menuDetails.length > 0) {
+                            html += `<div class="mb-2">`;
+                            menuDetails.forEach(detail => {
+                                html += `<div class="small">${detail}</div>`;
+                            });
+                            html += `</div>`;
+                        } else {
+                            html += `<p class="text-muted mb-2">Menü içeriği henüz eklenmemiş.</p>`;
+                        }
+                    }
+
+                    if (breakfast.menu.dosyaYolu) {
+                        html += `<div class="d-flex justify-content-between align-items-center">`;
+                        html += `<a href="/uploads/kahvalti-listesi/${breakfast.menu.dosyaYolu}" class="btn btn-sm btn-outline-primary" download>`;
+                        html += `<i class="fas fa-download me-1"></i>İndir</a>`;
+                        html += `<div class="upload-info text-muted"><small>${breakfast.menu.yukleyenKullanici || 'Admin'} tarafından yüklendi</small></div>`;
+                        html += `</div>`;
+                    }
+                } else {
+                    html += `<p class="text-muted mb-2">Bugün için kahvaltı listesi bulunamadı.</p>`;
+                }
+                html += `</div>`;
+            } else {
+                html = `<div class="text-center text-muted py-3">`;
+                html += `<i class="fas fa-utensils fa-2x mb-2"></i>`;
+                html += `<p>Bugün için yemek veya kahvaltı listesi bulunamadı.</p>`;
+                html += `</div>`;
+            }
+
+            console.log('HTML oluşturuldu:', html);
+            $('#food-breakfast-menu-container').html(html);
+        }).fail(function(xhr, status, error) {
+            console.error('Yemek menüsü yüklenirken hata:', error);
+            $('#food-breakfast-menu-container').html(`
+                <div class="text-center text-danger py-3">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                    <p>Yemek menüsü yüklenirken hata oluştu.</p>
+                </div>
+            `);
+        });
+    }
+    loadFoodAndBreakfastMenus();
+    // Yükleme sonrası güncelleme
+    $('#food-menu-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: '/Home/UploadFoodMenu',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(res) {
+                alert(res.message); // <-- Mesajı mutlaka göster
+                if (res.success) {
+                    $('#foodMenuModal').modal('hide');
+                    $('#food-menu-form')[0].reset();
+                    loadFoodAndBreakfastMenus();
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            }
+        });
+    });
+    $('#breakfast-menu-form').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: '/Home/UploadBreakfastMenu',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(res) {
+                alert(res.message); // <-- Mesajı mutlaka göster
+                if (res.success) {
+                    $('#breakfastMenuModal').modal('hide');
+                    $('#breakfast-menu-form')[0].reset();
+                    loadFoodAndBreakfastMenus();
+                }
+            },
+            error: function() {
+                alert('Bir hata oluştu.');
+            }
+        });
+    });
+
+    // Modal kapatıldığında formları sıfırla
+    $('#missionVisionModal').on('hidden.bs.modal', function () {
+        $('#mission-vision-form')[0].reset();
+        // Mevcut değerleri yükle
+        $.get('/Home/GetMissionVision', function(data) {
+            $('#mission-input').val(data.misyon);
+            $('#vision-input').val(data.vizyon);
+        });
+    });
+
+    $('#foodMenuModal').on('hidden.bs.modal', function () {
+        $('#food-menu-form')[0].reset();
+    });
+
+    $('#breakfastMenuModal').on('hidden.bs.modal', function () {
+        $('#breakfast-menu-form')[0].reset();
+    });
+
+    // Duyuru düzenleme (modalı doldur)
+    $(document).on('click', '.edit-announcement-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('id');
+        
+        // Duyuru detaylarını getir
+        $.get('/Duyuru/GetDuyuruFiles', { duyuruId: id }, function(files) {
+            // Duyuru bilgilerini getir
+            $.get('/Duyuru/GetDuyurular', function(response) {
+                // response bir array olmalı, eğer değilse hata kontrolü yap
+                var duyurular = Array.isArray(response) ? response : [];
+                var d = duyurular.find(x => x.id === id);
+                if (d) {
+                    // Form alanlarını doldur
+                    $('#duyuru-id').val(d.id);
+                    $('#duyuru-baslik').val(d.baslik);
+                    $('#duyuru-aciklama').val(d.aciklama);
+                    
+                    // Eski fotoğrafları göster
+                    var eskiPreview = $('#mini-foto-preview');
+                    eskiPreview.empty();
+                    
+                    if (files && files.length > 0) {
+                        var photoFiles = files.filter(f => f.fileType === 'Photo');
+                        if (photoFiles.length > 0) {
+                            eskiPreview.html('<div class="mb-2"><small class="text-muted">Mevcut fotoğraflar:</small></div>');
+                            
+                            photoFiles.forEach(function(file, index) {
+                                var radio = `<input type='radio' name='mini-foto-radio' value='${index}' ${(index === (d.miniFotoIndex || 0)) ? 'checked' : ''} style='margin-right:4px;' />`;
+                                var img = `<img src='${file.filePath}' style='width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid #0d6efd;margin-right:4px;' />`;
+                                var delBtn = `<button type='button' class='btn btn-sm btn-danger ms-1 remove-old-foto' data-file-id='${file.id}' title='Kaldır'>&times;</button>`;
+                                var wrapper = $(`<label class='d-flex align-items-center mb-1' style='cursor:pointer;'>${radio}${img}${delBtn}</label>`);
+                                eskiPreview.append(wrapper);
+                            });
+                        } else {
+                            eskiPreview.html('<small class="text-muted">Bu duyuruya henüz fotoğraf eklenmemiş.</small>');
+                        }
+                    } else {
+                        eskiPreview.html('<small class="text-muted">Bu duyuruya henüz dosya eklenmemiş.</small>');
+                    }
+                    
+                    // Silinecek eski fotoğraflar için gizli input
+                    $('#removed-old-fotos').val('');
+                    $('#mini-foto-index').val(d.miniFotoIndex || 0);
+                    $('#announcementModalLabel').text('Duyuru Düzenle');
+                    var modal = new bootstrap.Modal(document.getElementById('announcementModal'));
+                    modal.show();
+                }
+            });
+        });
+    });
+
+    // Eski fotoğraf silme butonu
+    $(document).on('click', '.remove-old-foto', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var fileId = $(this).data('file-id');
+        var label = $(this).closest('label');
+        
+        $('#deleteConfirmMessage').text('Bu fotoğrafı silmek istediğinizden emin misiniz?');
+        $('#deleteConfirmDetails').text('Bu işlem geri alınamaz.');
+        $('#confirmDeleteBtn').data('file-id', fileId);
+        $('#confirmDeleteBtn').data('label', label);
+        $('#deleteConfirmModal').modal('show');
+    });
+
+    // Modal kapatıldığında formu sıfırla
+    $('#announcementModal').on('hidden.bs.modal', function () {
+        $('#announcement-form')[0].reset();
+        $('#duyuru-id').val('');
+        $('#removed-old-fotos').val('');
+        $('#mini-foto-preview').empty();
+        $('#mini-foto-preview').html('<small class="text-muted">Fotoğraf yükleyin ve mini fotoğraf seçin</small>');
+        $('#announcementModalLabel').text('Duyuru Ekle');
+    });
+
+    // Duyuru silme fonksiyonu (ana sayfada kullanım için)
+    window.deleteDuyuru = function(id, baslik) {
+        $('#deleteConfirmMessage').text('"' + baslik + '" başlıklı duyuruyu silmek istediğinizden emin misiniz?');
+        $('#deleteConfirmDetails').text('Bu işlem geri alınamaz.');
+        $('#confirmDeleteBtn').data('id', id);
+        $('#deleteConfirmModal').modal('show');
+    };
+
+    // Silme onay modalındaki Evet butonuna tıklandığında
+    $('#confirmDeleteBtn').on('click', function() {
+        var duyuruId = $(this).data('id');
+        var fileId = $(this).data('file-id');
+        var label = $(this).data('label');
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        
+        if (duyuruId) {
+            // Duyuru silme
+            $.ajax({
+                url: '/Duyuru/Delete',
+                type: 'POST',
+                data: { id: duyuruId, __RequestVerificationToken: token },
+                success: function(response) {
+                    if (response.success) {
+                        $('#deleteConfirmModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Duyuru silinirken bir hata oluştu.');
+                    }
+                },
+                error: function() {
+                    alert('Duyuru silinirken bir hata oluştu.');
+                }
+            });
+        } else if (fileId) {
+            // Fotoğraf silme
+            $.ajax({
+                url: '/Duyuru/DeleteDuyuruFile',
+                type: 'POST',
+                data: {
+                    fileId: fileId,
+                    __RequestVerificationToken: token
+                },
+                success: function(res) {
+                    if (res.success) {
+                        $('#deleteConfirmModal').modal('hide');
+                        // Fotoğrafı önizlemeden kaldır
+                        label.remove();
+                        // Mini fotoğraf preview'ı güncelle
+                        if ($('#mini-foto-preview label').length === 0) {
+                            $('#mini-foto-preview').html('<small class="text-muted">Bu duyuruya henüz fotoğraf eklenmemiş.</small>');
+                        }
+                    } else {
+                        alert('Fotoğraf silinirken bir hata oluştu: ' + (res.message || 'Bilinmeyen hata'));
+                    }
+                },
+                error: function() {
+                    alert('Fotoğraf silinirken bir hata oluştu.');
+                }
+            });
+        }
+    });
+});
+</script>
+}
+

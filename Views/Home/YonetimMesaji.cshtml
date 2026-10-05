@@ -1,0 +1,443 @@
+@model List<WebPortal.Models.YonetimMesaji>
+@{
+    ViewData["Title"] = "Yönetim Mesajı";
+    var isAdmin = User.IsInRole("Admin");
+    var mesajlar = Model ?? new List<WebPortal.Models.YonetimMesaji>();
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-6"><i class="fas fa-bullhorn me-2"></i>Yönetim Mesajları</h1>
+        @if (isAdmin)
+        {
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#yonetimMesajiModal">
+                <i class="fas fa-plus"></i> Yeni Mesaj Ekle
+            </button>
+        }
+    </div>
+    <div class="row g-4">
+        @foreach (var mesaj in mesajlar)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            @if (!string.IsNullOrEmpty(mesaj.Baslik))
+                            {
+                                @mesaj.Baslik
+                            }
+                            else
+                            {
+                                @mesaj.Tarih.ToShortDateString()
+                            }
+                        </h5>
+                        <p class="card-text">@mesaj.Mesaj</p>
+                        
+                        @* Dosyalar varsa göster *@
+                        @if (mesaj.Dosyalar != null && mesaj.Dosyalar.Any())
+                        {
+                            <div class="mt-3">
+                                <h6 class="text-muted mb-2"><i class="fas fa-paperclip me-1"></i>Ekli Dosyalar:</h6>
+                                @foreach (var dosya in mesaj.Dosyalar)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                                        <div>
+                                            <a href="/uploads/yonetim-mesajlari/@dosya.DosyaYolu" target="_blank" class="text-decoration-none">
+                                                <i class="fas fa-file me-1"></i>@dosya.DosyaAdi
+                                            </a>
+                                            @if (!string.IsNullOrEmpty(dosya.Aciklama))
+                                            {
+                                                <small class="text-muted d-block">@dosya.Aciklama</small>
+                                            }
+                                        </div>
+                                        @if (isAdmin)
+                                        {
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary btn-sm edit-file-btn" data-id="@dosya.Id" data-mesaj-id="@mesaj.Id">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger btn-sm delete-file-btn" data-id="@dosya.Id">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    @if (isAdmin)
+                    {
+                        <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                            <button class="btn btn-sm btn-outline-success add-file-btn" data-bs-toggle="modal" data-bs-target="#addFileModal" data-mesaj-id="@mesaj.Id">
+                                <i class="fas fa-plus"></i> Dosya Ekle
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary edit-mesaj-btn" data-bs-toggle="modal" data-bs-target="#yonetimMesajiModal" data-id="@mesaj.Id">Düzenle</button>
+                            <button class="btn btn-sm btn-outline-danger delete-mesaj-btn" data-id="@mesaj.Id">Sil</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal: Yeni/Düzenle Yönetim Mesajı -->
+@if (isAdmin)
+{
+    <div class="modal fade" id="yonetimMesajiModal" tabindex="-1" aria-labelledby="yonetimMesajiModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="yonetimMesajiForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="Id" name="Id" value="0" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="yonetimMesajiModalLabel">Yeni Yönetim Mesajı</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="Mesaj" class="form-label">Mesaj</label>
+                            <textarea class="form-control" id="Mesaj" name="Mesaj" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Tarih" class="form-label">Tarih</label>
+                            <input type="date" class="form-control" id="Tarih" name="Tarih" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="Baslik" class="form-label">Başlık (Opsiyonel)</label>
+                            <input type="text" class="form-control" id="Baslik" name="Baslik" />
+                        </div>
+                        <div id="yonetim-mesaji-error" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dosya Ekleme Modal -->
+    <div class="modal fade" id="addFileModal" tabindex="-1" aria-labelledby="addFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="addFileForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="fileYonetimMesajiId" name="YonetimMesajiId" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addFileModalLabel">Dosya Ekle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label">Dosya</label>
+                            <input type="file" class="form-control" id="fileInput" name="file" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="fileAciklama" class="form-label">Açıklama (Opsiyonel)</label>
+                            <textarea class="form-control" id="fileAciklama" name="Aciklama" rows="2"></textarea>
+                        </div>
+                        <div id="add-file-error" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dosya Düzenleme Modal -->
+    <div class="modal fade" id="editFileModal" tabindex="-1" aria-labelledby="editFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="editFileForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editFileId" name="Id" />
+                    <input type="hidden" id="editFileYonetimMesajiId" name="YonetimMesajiId" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editFileModalLabel">Dosyayı Düzenle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editFileInput" class="form-label">Yeni Dosya (Opsiyonel)</label>
+                            <input type="file" class="form-control" id="editFileInput" name="file" />
+                            <div id="currentFileName" class="mt-2">
+                                <small class="text-muted">Mevcut dosya: <span id="currentFileNameSpan"></span></small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFileAciklama" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="editFileAciklama" name="Aciklama" rows="2"></textarea>
+                        </div>
+                        <div id="edit-file-error" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mesaj Silme Onay Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteConfirmModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Silme Onayı
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <div class="mb-3">
+                        <i class="fas fa-question-circle fa-3x text-warning"></i>
+                    </div>
+                    <h6 id="deleteConfirmMessage" class="mb-2"></h6>
+                    <p id="deleteConfirmDetails" class="text-muted small mb-0"></p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>İptal
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                        <i class="fas fa-trash me-1"></i>Evet, Sil
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Tarih alanını bugünün tarihi ile doldur
+            $('#Tarih').val(new Date().toISOString().split('T')[0]);
+
+            // Modal açıldığında form'u temizle
+            $('#yonetimMesajiModal').on('show.bs.modal', function() {
+                if ($('#Id').val() == '0') {
+                    // Yeni mesaj ekleme
+                    $('#yonetimMesajiForm')[0].reset();
+                    $('#Id').val('0');
+                    $('#yonetimMesajiModalLabel').text('Yeni Yönetim Mesajı');
+                }
+            });
+
+            // Yönetim mesajı ekleme/düzenleme formu
+            $('#yonetimMesajiForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var formData = new FormData(this);
+                var id = $('#Id').val();
+                var url = id && id != '0' ? '/Home/EditYonetimMesaji' : '/Home/AddYonetimMesaji';
+                
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.success) {
+                            $('#yonetimMesajiModal').modal('hide');
+                            $('#yonetimMesajiForm')[0].reset();
+                            $('#Id').val('0');
+                            location.reload();
+                        } else {
+                            $('#yonetim-mesaji-error').removeClass('d-none').text(res.message || 'Bir hata oluştu.');
+                        }
+                    },
+                    error: function() {
+                        $('#yonetim-mesaji-error').removeClass('d-none').text('Bir hata oluştu.');
+                    }
+                });
+            });
+
+            // Mesaj düzenleme butonuna tıklandığında
+            $('.edit-mesaj-btn').on('click', function() {
+                var id = $(this).data('id');
+                var card = $(this).closest('.card');
+                
+                $('#Id').val(id);
+                $('#Mesaj').val(card.find('.card-text').text());
+                $('#Tarih').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                $('#Baslik').val(card.find('.card-title').text());
+                $('#yonetimMesajiModalLabel').text('Yönetim Mesajı Düzenle');
+            });
+
+            // Mesaj silme butonuna tıklandığında
+            $('.delete-mesaj-btn').on('click', function() {
+                var mesajId = $(this).data('id');
+                var mesajBaslik = $(this).closest('.card').find('.card-title').text();
+
+                $('#deleteConfirmMessage').text('Bu mesajı silmek istediğinize emin misiniz?');
+                $('#deleteConfirmDetails').text(`Mesaj: "${mesajBaslik}"`);
+                $('#confirmDeleteBtn').data('mesaj-id', mesajId);
+                $('#deleteConfirmModal').modal('show');
+            });
+
+            // Silme onay modalındaki Evet butonuna tıklandığında
+            $('#confirmDeleteBtn').on('click', function() {
+                var mesajId = $(this).data('mesaj-id');
+                var fileId = $(this).data('file-id');
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                
+                if (mesajId) {
+                    // Mesaj silme
+                    $.ajax({
+                        url: '/Home/DeleteYonetimMesaji',
+                        type: 'POST',
+                        data: { id: mesajId, __RequestVerificationToken: token },
+                        success: function(res) {
+                            if (res.success) {
+                                $('#deleteConfirmModal').modal('hide');
+                                location.reload();
+                            } else {
+                                alert(res.message || 'Silme işlemi başarısız.');
+                            }
+                        },
+                        error: function() {
+                            alert('Silme işlemi sırasında bir hata oluştu.');
+                        }
+                    });
+                } else if (fileId) {
+                    // Dosya silme
+                    $.ajax({
+                        url: '/Home/DeleteYonetimMesajiFile',
+                        type: 'POST',
+                        data: { id: fileId, __RequestVerificationToken: token },
+                        success: function(res) {
+                            if (res.success) {
+                                $('#deleteConfirmModal').modal('hide');
+                                location.reload();
+                            } else {
+                                alert(res.message || 'Dosya silme işlemi başarısız.');
+                            }
+                        },
+                        error: function() {
+                            alert('Dosya silme işlemi sırasında bir hata oluştu.');
+                        }
+                    });
+                }
+            });
+
+            // Dosya ekleme butonuna tıklandığında
+            $('.add-file-btn').on('click', function() {
+                var mesajId = $(this).data('mesaj-id');
+                $('#fileYonetimMesajiId').val(mesajId);
+            });
+
+            // Dosya ekleme formu
+            $('#addFileForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var formData = new FormData(this);
+                
+                $.ajax({
+                    url: '/Home/AddYonetimMesajiFile',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.success) {
+                            $('#addFileModal').modal('hide');
+                            $('#addFileForm')[0].reset();
+                            location.reload();
+                        } else {
+                            $('#add-file-error').removeClass('d-none').text(res.message || 'Bir hata oluştu.');
+                        }
+                    },
+                    error: function() {
+                        $('#add-file-error').removeClass('d-none').text('Dosya eklenirken bir hata oluştu.');
+                    }
+                });
+            });
+
+            // Dosya düzenleme butonuna tıklandığında
+            $('.edit-file-btn').on('click', function() {
+                var fileId = $(this).data('id');
+                var mesajId = $(this).data('mesaj-id');
+                
+                // Dosya bilgilerini al
+                $.get('/Home/GetYonetimMesajiFile', { id: fileId }, function(data) {
+                    if (data.success) {
+                        var file = data.file;
+                        
+                        $('#editFileId').val(file.id);
+                        $('#editFileYonetimMesajiId').val(file.yonetimMesajiId);
+                        $('#editFileAciklama').val(file.description);
+                        $('#currentFileNameSpan').text(file.originalFileName);
+                        
+                        $('#editFileModal').modal('show');
+                    }
+                });
+            });
+
+            // Dosya düzenleme formu
+            $('#editFileForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var formData = new FormData(this);
+                
+                $.ajax({
+                    url: '/Home/EditYonetimMesajiFile',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(res) {
+                        if (res.success) {
+                            $('#editFileModal').modal('hide');
+                            $('#editFileForm')[0].reset();
+                            location.reload();
+                        } else {
+                            $('#edit-file-error').removeClass('d-none').text(res.message || 'Bir hata oluştu.');
+                        }
+                    },
+                    error: function() {
+                        $('#edit-file-error').removeClass('d-none').text('Dosya düzenlenirken bir hata oluştu.');
+                    }
+                });
+            });
+
+            // Dosya silme butonuna tıklandığında
+            $('.delete-file-btn').on('click', function() {
+                var fileId = $(this).data('id');
+                var fileName = $(this).closest('tr').find('td:first').text() || 'Bu dosya';
+                
+                $('#deleteConfirmMessage').text(`"${fileName}" dosyasını silmek istediğinizden emin misiniz?`);
+                $('#deleteConfirmDetails').text('Bu işlem geri alınamaz.');
+                $('#confirmDeleteBtn').data('file-id', fileId);
+                $('#deleteConfirmModal').modal('show');
+            });
+
+            // Modal kapandığında formu sıfırla
+            $('#yonetimMesajiModal').on('hidden.bs.modal', function () {
+                $('#yonetimMesajiForm')[0].reset();
+                $('#yonetimMesajiForm').removeData('id');
+                $('#yonetimMesajiModalLabel').text('Yeni Yönetim Mesajı');
+                $('#yonetim-mesaji-error').addClass('d-none');
+            });
+
+            // Dosya modal'larını temizle
+            $('#addFileModal').on('hidden.bs.modal', function () {
+                $('#addFileForm')[0].reset();
+                $('#add-file-error').addClass('d-none');
+            });
+
+            $('#editFileModal').on('hidden.bs.modal', function () {
+                $('#editFileForm')[0].reset();
+                $('#edit-file-error').addClass('d-none');
+            });
+        });
+    </script>
+}

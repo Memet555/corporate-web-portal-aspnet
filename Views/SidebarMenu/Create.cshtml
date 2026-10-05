@@ -1,0 +1,301 @@
+@model WebPortal.Models.SidebarMenu
+@{
+    ViewData["Title"] = "Yeni Menü Ekle";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Yeni Menü Ekle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Lütfen aşağıdaki hataları düzeltin:</h6>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Title" class="form-label">Menü Başlığı *</label>
+                                    <input asp-for="Title" class="form-control" placeholder="Örn: Finans, İK, Projeler" />
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="IconClass" class="form-label">İkon Sınıfı</label>
+                                    <div class="input-group">
+                                        <input asp-for="IconClass" class="form-control" placeholder="fa-solid fa-chart-line" />
+                                        <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#iconPickerModal">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <small class="form-text text-muted">Font Awesome ikon sınıfı (örn: fa-solid fa-chart-line)</small>
+                                    <span asp-validation-for="IconClass" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Url" class="form-label">URL</label>
+                                    <input asp-for="Url" class="form-control" placeholder="/finance, /hr, /projects" />
+                                    <small class="form-text text-muted">Menü tıklanınca gidilecek sayfa (boş bırakılabilir)</small>
+                                    <span asp-validation-for="Url" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RequiredRole" class="form-label">Gerekli Rol</label>
+                                    <select asp-for="RequiredRole" class="form-select">
+                                        <option value="">Rol gerekmez</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="User">User</option>
+                                    </select>
+                                    <small class="form-text text-muted">Bu menüyü görmek için gerekli rol</small>
+                                    <span asp-validation-for="RequiredRole" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PageType" class="form-label">Sayfa Türü</label>
+                                    <select asp-for="PageType" class="form-select" id="pageTypeSelect">
+                                        <option value="Report">📊 Rapor Sayfası</option>
+                                        <option value="Custom">🔧 Özel Sayfa</option>
+                                        <option value="External">🔗 Dış Bağlantı</option>
+                                    </select>
+                                    <small class="form-text text-muted">Bu menü türüne göre sayfa oluşturulacak</small>
+                                    <span asp-validation-for="PageType" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ParentId" class="form-label">Üst Menü</label>
+                                    <select asp-for="ParentId" class="form-select">
+                                        <option value="">Ana menü (üst menü değil)</option>
+                                        @foreach (var parent in ViewBag.ParentMenus)
+                                        {
+                                            <option value="@parent.Id">@parent.Title</option>
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">Alt menü yapmak istiyorsanız üst menüyü seçin</small>
+                                    <span asp-validation-for="ParentId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input" />
+                                        <label asp-for="IsActive" class="form-check-label">
+                                            Menü aktif olsun
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Pasif menüler sidebar'da görünmez</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="autoGeneratePage" checked />
+                                        <label class="form-check-label" for="autoGeneratePage">
+                                            Otomatik sayfa oluştur
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Menü eklendiğinde otomatik sayfa oluşturulsun</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Geri Dön
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Menü Ekle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- İkon Seçici Modal -->
+<div class="modal fade" id="iconPickerModal" tabindex="-1" aria-labelledby="iconPickerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="iconPickerModalLabel">İkon Seç</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="iconSearch" placeholder="İkon ara...">
+                </div>
+                <div class="row" id="iconGrid">
+                    <!-- İkonlar buraya yüklenecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(function() {
+    // Form validation
+    $('form').on('submit', function(e) {
+        var isValid = true;
+        var title = $('#Title').val().trim();
+        
+        if (!title) {
+            $('#Title').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('#Title').removeClass('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Lütfen gerekli alanları doldurun.');
+            return false;
+        }
+    });
+    
+    // Başlık değiştiğinde URL otomatik doldur
+    $('#Title').on('input', function() {
+        var title = $(this).val();
+        if (title && !$('#Url').val()) {
+            var cleanTitle = title.replace(/[ığüşöçİĞÜŞÖÇ]/g, function(match) {
+                var replacements = {
+                    'ı': 'i', 'ğ': 'g', 'ü': 'u', 'ş': 's', 'ö': 'o', 'ç': 'c',
+                    'İ': 'I', 'Ğ': 'G', 'Ü': 'U', 'Ş': 'S', 'Ö': 'O', 'Ç': 'C'
+                };
+                return replacements[match] || match;
+            }).replace(/\s+/g, '-');
+            $('#Url').val('/DynamicPage/Show/' + cleanTitle);
+        }
+    });
+    
+    // Sayfa türü değiştiğinde URL güncelle
+    $('#pageTypeSelect').on('change', function() {
+        var pageType = $(this).val();
+        var title = $('#Title').val();
+        var url = $('#Url').val();
+        
+        if (title && !url) {
+            var cleanTitle = title.replace(/[ığüşöçİĞÜŞÖÇ]/g, function(match) {
+                var replacements = {
+                    'ı': 'i', 'ğ': 'g', 'ü': 'u', 'ş': 's', 'ö': 'o', 'ç': 'c',
+                    'İ': 'I', 'Ğ': 'G', 'Ü': 'U', 'Ş': 'S', 'Ö': 'O', 'Ç': 'C'
+                };
+                return replacements[match] || match;
+            }).replace(/\s+/g, '-');
+            
+            if (pageType === 'External') {
+                $('#Url').val('https://example.com/' + cleanTitle);
+            } else {
+                $('#Url').val('/DynamicPage/Show/' + cleanTitle);
+            }
+        }
+    });
+    
+    // İkon arama
+    $('#iconSearch').on('input', function() {
+        var searchTerm = $(this).val().toLowerCase();
+        $('#iconGrid .icon-item').each(function() {
+            var iconName = $(this).find('.icon-name').text().toLowerCase();
+            if (iconName.includes(searchTerm)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
+    // İkon seçimi
+    $(document).on('click', '.icon-item', function() {
+        var iconClass = $(this).data('icon');
+        $('#IconClass').val(iconClass);
+        $('#iconPickerModal').modal('hide');
+    });
+
+    // Modal açıldığında ikonları yükle
+    $('#iconPickerModal').on('show.bs.modal', function() {
+        if ($('#iconGrid').children().length === 0) {
+            loadIcons();
+        }
+    });
+
+    function loadIcons() {
+        var commonIcons = [
+            'fa-solid fa-chart-line', 'fa-solid fa-chart-bar', 'fa-solid fa-chart-pie',
+            'fa-solid fa-users', 'fa-solid fa-user-tie', 'fa-solid fa-user-group',
+            'fa-solid fa-wallet', 'fa-solid fa-money-bill', 'fa-solid fa-credit-card',
+            'fa-solid fa-boxes-stacked', 'fa-solid fa-box', 'fa-solid fa-truck',
+            'fa-solid fa-project-diagram', 'fa-solid fa-tasks', 'fa-solid fa-clipboard-list',
+            'fa-solid fa-headset', 'fa-solid fa-life-ring', 'fa-solid fa-question-circle',
+            'fa-solid fa-bullhorn', 'fa-solid fa-megaphone', 'fa-solid fa-ad',
+            'fa-solid fa-gears', 'fa-solid fa-cog', 'fa-solid fa-sliders',
+            'fa-solid fa-file-alt', 'fa-solid fa-file-pdf', 'fa-solid fa-file-excel',
+            'fa-solid fa-calendar', 'fa-solid fa-clock', 'fa-solid fa-calendar-check',
+            'fa-solid fa-bell', 'fa-solid fa-envelope', 'fa-solid fa-inbox',
+            'fa-solid fa-home', 'fa-solid fa-building', 'fa-solid fa-industry',
+            'fa-solid fa-globe', 'fa-solid fa-map-marker-alt', 'fa-solid fa-phone',
+            'fa-solid fa-mobile-alt', 'fa-solid fa-laptop', 'fa-solid fa-desktop',
+            'fa-solid fa-database', 'fa-solid fa-server', 'fa-solid fa-network-wired',
+            'fa-solid fa-shield-alt', 'fa-solid fa-lock', 'fa-solid fa-key',
+            'fa-solid fa-eye', 'fa-solid fa-eye-slash', 'fa-solid fa-search',
+            'fa-solid fa-filter', 'fa-solid fa-sort', 'fa-solid fa-arrows-alt'
+        ];
+
+        var html = '';
+        commonIcons.forEach(function(icon) {
+            html += `
+                <div class="col-md-2 mb-2">
+                    <div class="icon-item text-center p-2 border rounded cursor-pointer" data-icon="${icon}">
+                        <i class="${icon} fa-2x mb-2"></i>
+                        <div class="icon-name small">${icon}</div>
+                    </div>
+                </div>
+            `;
+        });
+        $('#iconGrid').html(html);
+    }
+});
+</script>
+
+<style>
+.icon-item {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-item:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff !important;
+    transform: scale(1.05);
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
+}

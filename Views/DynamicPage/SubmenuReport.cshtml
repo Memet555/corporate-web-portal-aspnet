@@ -1,0 +1,353 @@
+@model WebPortal.Models.SidebarMenu
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Alt Menü Sayfa Başlığı -->
+            <div class="submenu-page-header">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-level-down-alt me-2 text-muted"></i>
+                    <h2 class="mb-0">@Model.Title</h2>
+                    <span class="badge bg-secondary ms-2">Alt Menü</span>
+                </div>
+                <p class="text-muted">
+                    Bu alt menü sayfasında @Model.Title.ToLower() ile ilgili raporları yönetebilir, 
+                    PDF, Excel, ZIP gibi dosyalar ekleyebilirsiniz.
+                </p>
+            </div>
+
+            <!-- Raporlar Bölümü -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>@Model.Title Raporları
+                        </h5>
+                        <button class="btn btn-primary btn-sm" onclick="addReport()">
+                            <i class="fas fa-plus me-1"></i>Yeni Rapor Ekle
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Rapor Listesi -->
+                    <div id="report-list-container">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Bu alt menüye ait gösterilecek rapor bulunamadı.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hızlı İstatistikler -->
+            <div class="row mt-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white report-stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-file-alt fa-2x mb-2"></i>
+                            <h4 class="mb-1">0</h4>
+                            <small>Toplam Rapor</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white report-stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h4 class="mb-1">0</h4>
+                            <small>Aktif Rapor</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white report-stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar fa-2x mb-2"></i>
+                            <h4 class="mb-1">0</h4>
+                            <small>Bu Ay</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white report-stats-card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clock fa-2x mb-2"></i>
+                            <h4 class="mb-1">0</h4>
+                            <small>Bekleyen</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kurumsal Özellikler -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card corporate-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Rapor Analizi
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="exportReports()">
+                                    <i class="fas fa-download me-1"></i>Dışa Aktar
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="generateSummary()">
+                                    <i class="fas fa-file-alt me-1"></i>Özet Rapor
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="scheduleReport()">
+                                    <i class="fas fa-calendar-plus me-1"></i>Zamanlı Rapor
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card corporate-card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-users me-2"></i>Takım Yönetimi
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="assignReports()">
+                                    <i class="fas fa-user-plus me-1"></i>Görev Ata
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="setPermissions()">
+                                    <i class="fas fa-shield-alt me-1"></i>Yetki Ayarla
+                                </button>
+                                <button class="btn btn-outline-info btn-sm" onclick="viewTeamActivity()">
+                                    <i class="fas fa-chart-line me-1"></i>Takım Aktivitesi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rapor Ekleme Modal -->
+<div class="modal fade" id="addReportModal" tabindex="-1" aria-labelledby="addReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReportModalLabel">
+                    <i class="fas fa-plus me-2"></i>@Model.Title - Yeni Rapor Ekle
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-report-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="reportTitle" class="form-label">Rapor Başlığı *</label>
+                                <input type="text" class="form-control" id="reportTitle" name="Title" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="reportType" class="form-label">Rapor Türü</label>
+                                <select class="form-select" id="reportType" name="Type">
+                                    <option value="PDF">PDF</option>
+                                    <option value="Excel">Excel</option>
+                                    <option value="Word">Word</option>
+                                    <option value="ZIP">ZIP</option>
+                                    <option value="Diğer">Diğer</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportDescription" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="reportDescription" name="Description" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportFile" class="form-label">Dosya *</label>
+                        <input type="file" class="form-control" id="reportFile" name="File" required>
+                        <small class="form-text text-muted">PDF, Excel, Word, ZIP dosyaları kabul edilir (Max: 10MB)</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-primary" onclick="saveReport()">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function addReport() {
+    // Modal'ı aç
+    const modal = new bootstrap.Modal(document.getElementById('addReportModal'));
+    modal.show();
+}
+
+function saveReport() {
+    const form = document.getElementById('add-report-form');
+    const formData = new FormData(form);
+    
+    // Form validasyonu
+    if (!formData.get('Title') || !formData.get('File').name) {
+        alert('Lütfen gerekli alanları doldurun!');
+        return;
+    }
+    
+    // Rapor kaydetme simülasyonu
+    const reportTitle = formData.get('Title');
+    const reportType = formData.get('Type');
+    const reportDescription = formData.get('Description');
+    const reportFile = formData.get('File');
+    
+    // Dosya boyutu kontrolü (10MB)
+    if (reportFile.size > 10 * 1024 * 1024) {
+        alert('Dosya boyutu 10MB\'dan büyük olamaz!');
+        return;
+    }
+    
+    // Dosya türü kontrolü
+    const allowedTypes = ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/zip'];
+    if (!allowedTypes.includes(reportFile.type) && reportFile.type !== '') {
+        alert('Sadece PDF, Excel, Word ve ZIP dosyaları kabul edilir!');
+        return;
+    }
+    
+    // Başarı mesajı
+    alert(`Rapor başarıyla eklendi!\n\nBaşlık: ${reportTitle}\nTür: ${reportType}\nAçıklama: ${reportDescription || 'Açıklama yok'}\nDosya: ${reportFile.name}\nBoyut: ${(reportFile.size / 1024 / 1024).toFixed(2)} MB\nAlt Menü: @Model.Title`);
+    
+    // Modal'ı kapat
+    const modal = bootstrap.Modal.getInstance(document.getElementById('addReportModal'));
+    modal.hide();
+    
+    // Form'u temizle
+    form.reset();
+    
+    // Rapor listesini güncelle
+    updateReportList();
+}
+
+function updateReportList() {
+    const container = document.getElementById('report-list-container');
+    
+    // Örnek rapor verisi
+    const reports = [
+        {
+            id: 1,
+            title: 'Örnek Alt Menü Raporu',
+            type: 'PDF',
+            date: new Date().toLocaleDateString('tr-TR'),
+            status: 'Aktif'
+        }
+    ];
+    
+    if (reports.length > 0) {
+        let html = `
+            <div class="table-responsive report-table">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Rapor Adı</th>
+                            <th>Tür</th>
+                            <th>Tarih</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+        reports.forEach(report => {
+            html += `
+                <tr>
+                    <td>${report.id}</td>
+                    <td>${report.title}</td>
+                    <td><span class="badge bg-secondary report-badge">${report.type}</span></td>
+                    <td>${report.date}</td>
+                    <td><span class="badge bg-success report-badge">${report.status}</span></td>
+                    <td class="report-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewReport(${report.id})">
+                            <i class="fas fa-eye me-1"></i>Görüntüle
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteReport(${report.id})">
+                            <i class="fas fa-trash me-1"></i>Sil
+                        </button>
+                    </td>
+                </tr>`;
+        });
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>`;
+        
+        container.innerHTML = html;
+    } else {
+        container.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Bu alt menüye ait gösterilecek rapor bulunamadı.
+            </div>`;
+    }
+}
+
+function viewReport(id) {
+    alert(`Alt Menü Raporu ID: ${id} görüntüleniyor...`);
+}
+
+function deleteReport(id) {
+    if (confirm('Bu raporu silmek istediğinizden emin misiniz?')) {
+        alert(`Rapor ID: ${id} silindi!`);
+        updateReportList();
+    }
+}
+
+// Kurumsal özellik fonksiyonları
+function exportReports() {
+    const reportType = prompt('Hangi formatta dışa aktarmak istiyorsunuz? (PDF/Excel/CSV)');
+    if (reportType) {
+        alert(`${reportType.toUpperCase()} formatında raporlar dışa aktarılıyor...\nDosya indirme başlayacak.`);
+    }
+}
+
+function generateSummary() {
+    alert('Özet rapor oluşturuluyor...\nRapor hazır olduğunda bildirim alacaksınız.');
+}
+
+function scheduleReport() {
+    const date = prompt('Rapor tarihini girin (GG/AA/YYYY):');
+    if (date) {
+        alert(`${date} tarihinde otomatik rapor oluşturulacak.`);
+    }
+}
+
+function assignReports() {
+    const assignee = prompt('Görev atanacak kişinin adını girin:');
+    if (assignee) {
+        alert(`${assignee} kişisine rapor görevi atandı.`);
+    }
+}
+
+function setPermissions() {
+    alert('Yetki ayarları açılıyor...\nKullanıcı rollerini ve erişim seviyelerini yapılandırabilirsiniz.');
+}
+
+function viewTeamActivity() {
+    alert('Takım aktivite raporu yükleniyor...\nSon 30 günlük aktivite verileri görüntülenecek.');
+}
+
+// Sayfa yüklendiğinde rapor listesini güncelle
+document.addEventListener('DOMContentLoaded', function() {
+    updateReportList();
+    console.log('Alt menü sayfası yüklendi: @Model.Title');
+});
+</script>
+}

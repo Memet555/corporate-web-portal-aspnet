@@ -1,0 +1,134 @@
+@model IEnumerable<WebPortal.Models.PortalBolumDosya>
+@using Microsoft.AspNetCore.Http
+@{
+    var isAdmin = User.IsInRole("Admin");
+    var portalSection = ViewData["SectionName"] as string ?? "";
+}
+<div class="portal-section-files-container" data-section="@portalSection">
+    <div id="portal-section-file-list">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Dosya</th>
+                            <th>Açıklama</th>
+                            <th>Yüklenme Tarihi</th>
+                            @if (isAdmin) { <th class="text-right">İşlemler</th> }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var file in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="/uploads/portal-bolumler/@file.DosyaYolu" target="_blank" class="text-decoration-none">
+                                        <i class="fas fa-file me-2"></i>
+                                        @{
+                                            var fileName = file.DosyaAdi;
+                                            if (fileName.Contains("_"))
+                                            {
+                                                fileName = fileName.Substring(fileName.IndexOf("_") + 1);
+                                            }
+                                            fileName = System.IO.Path.GetFileNameWithoutExtension(fileName);
+                                        }
+                                        @fileName
+                                    </a>
+                                </td>
+                                <td>@file.Aciklama</td>
+                                <td>@file.YuklenmeTarihi.ToString("dd.MM.yyyy HH:mm")</td>
+                                @if (isAdmin)
+                                {
+                                    <td class="text-right">
+                                        <button class="btn btn-primary btn-sm edit-portal-file-btn me-2" data-id="@file.Id" data-section="@portalSection">
+                                            <i class="fas fa-edit"></i> Düzenle
+                                        </button>
+                                        <button class="btn btn-danger btn-sm delete-portal-file-btn" data-id="@file.Id" data-section="@portalSection">
+                                            <i class="fas fa-trash"></i> Sil
+                                        </button>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center">
+                <p>Bu bölüme ait dosya bulunmamaktadır.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@if (isAdmin)
+{
+    <!-- Dosya Ekle Modalı -->
+    <div class="modal fade" id="addPortalFileModal" tabindex="-1" aria-labelledby="addPortalFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="add-portal-file-form" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="PortalBolumId" value="@ViewData["PortalBolumId"]" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addPortalFileModalLabel">Yeni Dosya Ekle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="portal-file" class="form-label">Dosya</label>
+                            <input type="file" class="form-control" id="portal-file" name="File" required />
+                        </div>
+                        <div class="mb-3">
+                            <label for="portal-file-description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="portal-file-description" name="Aciklama" rows="2"></textarea>
+                        </div>
+                        <div id="add-portal-file-error" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Dosya Düzenle Modalı -->
+    <div class="modal fade" id="editPortalFileModal" tabindex="-1" aria-labelledby="editPortalFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="edit-portal-file-form" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="edit-portal-file-id" name="Id" />
+                    <input type="hidden" id="edit-portal-file-section" name="SectionName" value="@portalSection" />
+                    <input type="hidden" name="PortalBolumId" value="@ViewData["PortalBolumId"]" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editPortalFileModalLabel">Dosyayı Düzenle</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="edit-portal-file" class="form-label">Yeni Dosya (Opsiyonel)</label>
+                            <input type="file" class="form-control" id="edit-portal-file" name="File" />
+                            <div id="edit-portal-current-file" class="mt-2">
+                                <small class="text-muted">Mevcut dosya: <span id="current-file-name"></span></small>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-portal-file-description" class="form-label">Açıklama</label>
+                            <textarea class="form-control" id="edit-portal-file-description" name="Description" rows="2"></textarea>
+                        </div>
+                        <div id="edit-portal-file-error" class="alert alert-danger d-none"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                        <button type="submit" class="btn btn-primary">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+} 

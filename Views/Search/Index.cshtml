@@ -1,0 +1,227 @@
+@model WebPortal.Controllers.SearchResultViewModel
+@{
+    ViewData["Title"] = string.IsNullOrWhiteSpace(Model.Query) ? "Arama" : $"Arama: {Model.Query}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Arama Başlığı -->
+            <div class="search-header mb-4">
+                @if (string.IsNullOrWhiteSpace(Model.Query))
+                {
+                    <h2><i class="fas fa-search me-2"></i>Arama</h2>
+                    <p class="text-muted">Portal içerisinde menüler, raporlar ve duyurular arasında arama yapın.</p>
+                }
+                else
+                {
+                    <h2><i class="fas fa-search me-2"></i>"@Model.Query" için arama sonuçları</h2>
+                    <p class="text-muted">Toplam @Model.TotalResults sonuç bulundu.</p>
+                }
+            </div>
+
+            <!-- Gelişmiş Arama Formu -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form asp-action="Index" method="get" class="row g-3">
+                        <div class="col-md-8">
+                            <label for="q" class="form-label">Arama Terimi</label>
+                            <input type="text" class="form-control" id="q" name="q" value="@Model.Query" 
+                                   placeholder="Menü, rapor, duyuru ara..." autofocus>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>Ara
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Query))
+            {
+                @if (Model.TotalResults == 0)
+                {
+                    <!-- Sonuç Bulunamadı -->
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">Sonuç Bulunamadı</h4>
+                        <p class="text-muted">
+                            "@Model.Query" için herhangi bir sonuç bulunamadı.<br>
+                            Farklı anahtar kelimeler deneyebilirsiniz.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <!-- Arama Sonuçları -->
+                    <div class="search-results">
+                        
+                        <!-- Menü Sonuçları -->
+                        @if (Model.Menus.Any())
+                        {
+                            <div class="result-section mb-4">
+                                <h4 class="section-title">
+                                    <i class="fas fa-bars me-2"></i>Menüler (@Model.Menus.Count)
+                                </h4>
+                                <div class="row g-3">
+                                    @foreach (var menu in Model.Menus)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card search-result-card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">
+                                                        <i class="@menu.IconClass me-2"></i>@menu.Title
+                                                    </h6>
+                                                    <p class="card-text text-muted small">Menü öğesi</p>
+                                                    <a href="@menu.Url" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-external-link-alt me-1"></i>Git
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Rapor Sonuçları -->
+                        @if (Model.Reports.Any())
+                        {
+                            <div class="result-section mb-4">
+                                <h4 class="section-title">
+                                    <i class="fas fa-file-alt me-2"></i>Raporlar (@Model.Reports.Count)
+                                </h4>
+                                <div class="row g-3">
+                                    @foreach (var report in Model.Reports)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card search-result-card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">@report.Title</h6>
+                                                    <p class="card-text text-muted small">
+                                                        @if (!string.IsNullOrEmpty(report.Description))
+                                                        {
+                                                            @(report.Description.Length > 100 ? report.Description.Substring(0, 100) + "..." : report.Description)
+                                                        }
+                                                        else
+                                                        {
+                                                            <span>@report.ReportType raporu - @report.Section</span>
+                                                        }
+                                                    </p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">@report.ReportDate.ToString("dd.MM.yyyy")</small>
+                                                        <a href="/DynamicPage/ViewReportFile?id=@report.Id" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye me-1"></i>Görüntüle
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Duyuru Sonuçları -->
+                        @if (Model.Announcements.Any())
+                        {
+                            <div class="result-section mb-4">
+                                <h4 class="section-title">
+                                    <i class="fas fa-bullhorn me-2"></i>Duyurular (@Model.Announcements.Count)
+                                </h4>
+                                <div class="row g-3">
+                                    @foreach (var announcement in Model.Announcements)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card search-result-card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">@announcement.Baslik</h6>
+                                                    <p class="card-text text-muted small">
+                                                        @if (!string.IsNullOrEmpty(announcement.Aciklama))
+                                                        {
+                                                            @(announcement.Aciklama.Length > 100 ? announcement.Aciklama.Substring(0, 100) + "..." : announcement.Aciklama)
+                                                        }
+                                                    </p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">@announcement.CreatedAt.ToString("dd.MM.yyyy")</small>
+                                                        <a href="/Duyuru/Detay/@announcement.Id" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-eye me-1"></i>Detay
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Portal Bölüm Sonuçları -->
+                        @if (Model.PortalSections.Any())
+                        {
+                            <div class="result-section mb-4">
+                                <h4 class="section-title">
+                                    <i class="fas fa-th-large me-2"></i>Portal Bölümleri (@Model.PortalSections.Count)
+                                </h4>
+                                <div class="row g-3">
+                                    @foreach (var portalSection in Model.PortalSections)
+                                    {
+                                        <div class="col-md-6 col-lg-4">
+                                            <div class="card search-result-card">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">@portalSection.Baslik</h6>
+                                                    <p class="card-text text-muted small">
+                                                        @if (!string.IsNullOrEmpty(portalSection.Aciklama))
+                                                        {
+                                                            @(portalSection.Aciklama.Length > 100 ? portalSection.Aciklama.Substring(0, 100) + "..." : portalSection.Aciklama)
+                                                        }
+                                                    </p>
+                                                    <a href="/PortalBolum/Detay/@portalSection.Id" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i>Detay
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+.search-result-card {
+    transition: all 0.2s ease;
+    border: 1px solid #e1e5e9;
+}
+
+.search-result-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0,123,255,0.15);
+    transform: translateY(-2px);
+}
+
+.section-title {
+    color: #495057;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+}
+
+.search-header h2 {
+    color: #343a40;
+    font-weight: 600;
+}
+
+.result-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+</style>

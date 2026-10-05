@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Ayarlar";
+    Layout = "~/Views/Shared/_layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="text-center p-5 border rounded-3 bg-light shadow-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-gear text-muted mb-4" viewBox="0 0 16 16">
+            <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/>
+            <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.902 3.433 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319zm-2.633.283c.27.92.023 1.905-.63 2.614l-.07.07a.5.5 0 0 1-.707 0l-.071-.071a2.249 2.249 0 0 1-2.614-.63l-.094-.319a2.249 2.249 0 0 1 .63-2.614l.07-.07a.5.5 0 0 1 .707 0l.071.071c.672.672 1.662.944 2.614.63l.319-.094zM12.246 8a4.246 4.246 0 1 1-8.492 0 4.246 4.246 0 0 1 8.492 0z"/>
+        </svg>
+        <h2 class="display-5 fw-bold text-body-emphasis">Ayar Grubu Yok</h2>
+        <div class="col-lg-6 mx-auto">
+            <p class="lead mb-4">
+                Sistemde yapılandırılmış bir ayar grubu bulunmuyor. Lütfen gerekli ayarları yapılandırın.
+            </p>
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                    <a href="@Url.Action("Create", "Settings")" class="btn btn-primary btn-lg px-4 gap-3">Yeni Ayar Grubu Ekle</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

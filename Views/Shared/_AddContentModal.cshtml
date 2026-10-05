@@ -1,0 +1,37 @@
+<!-- Yeni İçerik Ekle Modal -->
+<div class="modal fade" id="addContentModal" tabindex="-1" aria-labelledby="addContentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addContentModalLabel">Yeni İçerik Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-content-form">
+                    <div class="mb-3">
+                        <label for="content-title" class="form-label">Başlık</label>
+                        <input type="text" class="form-control" id="content-title" placeholder="İçerik başlığını girin" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content-description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="content-description" rows="4" placeholder="Açıklama girin"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="content-section" class="form-label">Bölüm</label>
+                        <select class="form-select" id="content-section" required>
+                            <option value="" selected disabled>Seçin...</option>
+                            <option value="HR">İnsan Kaynakları</option>
+                            <option value="Sales">Satış</option>
+                            <option value="Finance">Finans</option>
+                            <option value="Projects">Projeler</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary" id="save-content-btn">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>

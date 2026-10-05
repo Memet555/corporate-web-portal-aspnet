@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Yetkiler";
+}
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h2 class="display-4">@ViewData["Title"]</h2>
+        <i class="fas fa-shield-alt fa-5x text-muted my-4"></i>
+        <p class="lead">Henüz yönetilecek yetki bulunmamaktadır.</p>
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="#" class="btn btn-primary mt-3">Yeni Yetki Ekle</a>
+        }
+    </div>
+</div>

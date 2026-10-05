@@ -1,0 +1,26 @@
+@model WebPortal.Models.SidebarMenu
+@{
+    ViewData["Title"] = "Test Sayfası";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Test Sayfası - @Model.Title</h4>
+                </div>
+                <div class="card-body">
+                    <p>Bu bir test sayfasıdır. Model bilgileri:</p>
+                    <ul>
+                        <li><strong>ID:</strong> @Model.Id</li>
+                        <li><strong>Başlık:</strong> @Model.Title</li>
+                        <li><strong>URL:</strong> @Model.Url</li>
+                        <li><strong>Sayfa Türü:</strong> @Model.PageType</li>
+                        <li><strong>Aktif:</strong> @Model.IsActive</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

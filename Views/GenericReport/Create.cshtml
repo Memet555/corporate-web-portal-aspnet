@@ -1,0 +1,159 @@
+@model WebPortal.Models.GenericReport
+@{
+    ViewData["Title"] = "Yeni Rapor Ekle";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus me-2"></i>Yeni Rapor Ekle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert" style="display: none;">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Lütfen aşağıdaki hataları düzeltin:</h6>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Title" class="form-label">Rapor Başlığı *</label>
+                                    <input asp-for="Title" class="form-control" placeholder="Örn: Aylık Satış Raporu" />
+                                    <span asp-validation-for="Title" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ReportType" class="form-label">Rapor Türü</label>
+                                    <select asp-for="ReportType" class="form-select">
+                                        <option value="">Tür seçin</option>
+                                        <option value="PDF">PDF</option>
+                                        <option value="Excel">Excel</option>
+                                        <option value="Word">Word</option>
+                                        <option value="ZIP">ZIP</option>
+                                    </select>
+                                    <span asp-validation-for="ReportType" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Açıklama</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Rapor hakkında açıklama..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Section" class="form-label">Bölüm</label>
+                                    <input asp-for="Section" class="form-control" placeholder="Örn: Finans, Satış, İK" />
+                                    <span asp-validation-for="Section" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ReportFile" class="form-label">Dosya *</label>
+                                    <input asp-for="ReportFile" type="file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" />
+                                    <small class="form-text text-muted">PDF, Excel, Word, ZIP dosyaları kabul edilir (Max: 10MB)</small>
+                                    <span asp-validation-for="ReportFile" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ReportDate" class="form-label">Rapor Tarihi</label>
+                                    <input asp-for="ReportDate" type="date" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                    <span asp-validation-for="ReportDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input asp-for="IsActive" class="form-check-input" />
+                                        <label asp-for="IsActive" class="form-check-label">
+                                            Rapor aktif olsun
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">Pasif raporlar listede görünmez</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Geri Dön
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Rapor Ekle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(function() {
+    // Form validation
+    $('form').on('submit', function(e) {
+        var isValid = true;
+        var title = $('#Title').val().trim();
+        var file = $('#ReportFile')[0].files[0];
+        
+        if (!title) {
+            $('#Title').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('#Title').removeClass('is-invalid');
+        }
+        
+        if (!file) {
+            $('#ReportFile').addClass('is-invalid');
+            isValid = false;
+        } else {
+            $('#ReportFile').removeClass('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            $('.alert-danger').show();
+            return false;
+        }
+        
+        // Form submit edildiğinde log
+        console.log('Form submit edildi!');
+        console.log('Title:', title);
+        console.log('File:', file ? file.name : 'No file');
+    });
+    
+    // Başlık değiştiğinde ReportType otomatik doldur
+    $('#Title').on('input', function() {
+        var title = $(this).val().toLowerCase();
+        if (title.includes('pdf') || title.includes('rapor')) {
+            $('#ReportType').val('PDF');
+        } else if (title.includes('excel') || title.includes('tablo')) {
+            $('#ReportType').val('Excel');
+        } else if (title.includes('word') || title.includes('doküman')) {
+            $('#ReportType').val('Word');
+        }
+    });
+});
+</script>
+}

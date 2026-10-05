@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Roller";
+}
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h2 class="display-4">@ViewData["Title"]</h2>
+        <i class="fas fa-user-tag fa-5x text-muted my-4"></i>
+        <p class="lead">Henüz yönetilecek rol bulunmamaktadır.</p>
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="#" class="btn btn-primary mt-3">Yeni Rol Ekle</a>
+        }
+    </div>
+</div>

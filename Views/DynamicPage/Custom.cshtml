@@ -1,0 +1,78 @@
+@model WebPortal.Models.SidebarMenu
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        @if (!string.IsNullOrEmpty(Model.IconClass))
+                        {
+                            <i class="@Model.IconClass me-2"></i>
+                        }
+                        @Model.Title
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Bu sayfa <strong>@Model.Title</strong> için özel olarak oluşturulmuştur. 
+                        İçerik yönetici tarafından özelleştirilebilir.
+                    </div>
+                    
+                    <!-- Özel İçerik Alanı -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Özel İçerik</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>Bu alan yönetici tarafından özelleştirilebilir.</p>
+                                    <p>Örnek içerikler:</p>
+                                    <ul>
+                                        <li>Form elemanları</li>
+                                        <li>Özel tablolar</li>
+                                        <li>Grafikler ve istatistikler</li>
+                                        <li>Dosya yükleme alanları</li>
+                                        <li>API entegrasyonları</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Hızlı Erişim</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-cog me-1"></i>Ayarlar
+                                        </button>
+                                        <button class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-question-circle me-1"></i>Yardım
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-history me-1"></i>Geçmiş
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+// Özel sayfa için JavaScript fonksiyonları buraya eklenebilir
+console.log('Özel sayfa yüklendi: @Model.Title');
+</script>
+}

@@ -1,0 +1,257 @@
+@model List<WebPortal.Models.SidebarMenu>
+@{
+    ViewData["Title"] = "Sidebar Menü Yönetimi";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-bars me-2"></i>Sidebar Menü Yönetimi
+                    </h4>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Yeni Menü Ekle
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="menuTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th style="width: 50px;">Sıra</th>
+                                    <th>Başlık</th>
+                                    <th>URL</th>
+                                    <th>İkon</th>
+                                    <th>Rol</th>
+                                    <th>Üst Menü</th>
+                                    <th style="width: 100px;">Durum</th>
+                                    <th style="width: 150px;">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menuTableBody">
+                                @foreach (var menu in Model.OrderBy(m => m.DisplayOrder))
+                                {
+                                    <tr data-id="@menu.Id" data-order="@menu.DisplayOrder">
+                                        <td>@menu.Id</td>
+                                        <td>
+                                            <span class="badge bg-secondary">@menu.DisplayOrder</span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                @if (menu.IsSubmenu)
+                                                {
+                                                    <span class="badge bg-info me-2">Alt</span>
+                                                }
+                                                <strong>@menu.Title</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(menu.Url))
+                                            {
+                                                <code class="small">@menu.Url</code>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(menu.IconClass))
+                                            {
+                                                <i class="@menu.IconClass" title="@menu.IconClass"></i>
+                                                <small class="text-muted d-block">@menu.IconClass</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(menu.RequiredRole))
+                                            {
+                                                <span class="badge bg-warning">@menu.RequiredRole</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (menu.ParentId.HasValue)
+                                            {
+                                                var parent = Model.FirstOrDefault(m => m.Id == menu.ParentId.Value);
+                                                if (parent != null)
+                                                {
+                                                    <span class="badge bg-primary">@parent.Title</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Ana Menü</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input toggle-active" type="checkbox" 
+                                                       data-id="@menu.Id" 
+                                                       @(menu.IsActive ? "checked" : "")>
+                                                <label class="form-check-label">
+                                                    @(menu.IsActive ? "Aktif" : "Pasif")
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="@Url.Action("Edit", new { id = menu.Id })" 
+                                                   class="btn btn-outline-primary" title="Düzenle">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-outline-danger delete-menu" 
+                                                        data-id="@menu.Id" title="Sil">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+$(function() {
+    // Menü silme işlemi
+    $(document).on('click', '.delete-menu', function() {
+        var id = $(this).data('id');
+        var title = $(this).closest('tr').find('td:nth-child(3) strong').text();
+        
+        if (confirm(`"${title}" menüsünü silmek istediğinize emin misiniz?`)) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
+            $.ajax({
+                url: '@Url.Action("Delete")',
+                type: 'POST',
+                data: { 
+                    id: id,
+                    __RequestVerificationToken: token
+                },
+                success: function(res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert(res.message || 'Silme işlemi başarısız.');
+                    }
+                },
+                error: function() {
+                    alert('Bir hata oluştu.');
+                }
+            });
+        }
+    });
+
+    // Menü aktif/pasif yapma
+    $(document).on('change', '.toggle-active', function() {
+        var id = $(this).data('id');
+        var isChecked = $(this).is(':checked');
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        
+        $.ajax({
+            url: '@Url.Action("ToggleActive")',
+            type: 'POST',
+            data: { 
+                id: id,
+                __RequestVerificationToken: token
+            },
+            headers: {
+                'RequestVerificationToken': token
+            },
+            success: function(res) {
+                if (res.success) {
+                    // Label'ı güncelle
+                    var label = $(this).siblings('label');
+                    label.text(res.isActive ? 'Aktif' : 'Pasif');
+                } else {
+                    alert(res.message || 'Durum değiştirilemedi.');
+                    // Checkbox'ı eski haline getir
+                    $(this).prop('checked', !isChecked);
+                }
+            }.bind(this),
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', xhr.responseText);
+                alert('Bir hata oluştu: ' + error);
+                // Checkbox'ı eski haline getir
+                $(this).prop('checked', !isChecked);
+            }
+        });
+    });
+
+    // Sıralama için Sortable
+    var tbody = document.getElementById('menuTableBody');
+    if (tbody) {
+        new Sortable(tbody, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                var orderUpdates = [];
+                $(tbody).find('tr').each(function(index) {
+                    var id = $(this).data('id');
+                    if (id) {
+                        orderUpdates.push({
+                            id: id,
+                            order: index + 1
+                        });
+                    }
+                });
+                
+                // Sıralamayı güncelle
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                $.ajax({
+                    url: '@Url.Action("UpdateOrder")',
+                    type: 'POST',
+                    data: JSON.stringify(orderUpdates),
+                    contentType: 'application/json',
+                    headers: {
+                        'RequestVerificationToken': token
+                    },
+                    success: function(res) {
+                        if (res.success) {
+                            // Sıra numaralarını güncelle
+                            $(tbody).find('tr').each(function(index) {
+                                var orderBadge = $(this).find('.badge.bg-secondary');
+                                orderBadge.text(index + 1);
+                                $(this).data('order', index + 1);
+                            });
+                        } else {
+                            alert(res.message || 'Sıralama güncellenemedi.');
+                            location.reload();
+                        }
+                    },
+                    error: function() {
+                        alert('Bir hata oluştu.');
+                        location.reload();
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
+}

@@ -1,0 +1,447 @@
+@model List<Duyuru>
+@{
+    ViewData["Title"] = "Duyurular";
+}
+@Html.AntiForgeryToken()
+
+<style>
+.mini-photo-preview {
+    text-align: center;
+}
+
+.mini-photo-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.mini-photo-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #007bff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card {
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border-color: #007bff;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.card-title {
+    color: white;
+    font-weight: 600;
+}
+
+.btn-outline-primary {
+    border: 2px solid #007bff;
+    color: #007bff;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: #007bff;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-warning {
+    border: 2px solid #ffc107;
+    color: #ffc107;
+}
+
+.btn-outline-warning:hover {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-outline-danger {
+    border: 2px solid #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+    background: #dc3545;
+    color: white;
+}
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bullhorn me-2"></i>Duyurular
+                    </h3>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDuyuruModal">
+                                <i class="fas fa-plus me-1"></i>Yeni Duyuru
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <div class="row">
+                        @foreach (var duyuru in Model)
+                        {
+                            <div class="col-md-6 col-lg-4 mb-4">
+                                <div class="card h-100 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="fas fa-bullhorn me-2 text-primary"></i>
+                                            <h5 class="card-title mb-0">@duyuru.Baslik</h5>
+                                        </div>
+                                        
+                                        <p class="card-text text-muted small mb-2">
+                                            <i class="fas fa-calendar me-1"></i>@duyuru.Tarih.ToString("dd.MM.yyyy")
+                                        </p>
+                                        
+                                        <p class="card-text">@duyuru.Aciklama</p>
+                                        
+                                        @if (duyuru.Files != null && duyuru.Files.Any())
+                                        {
+                                            <div class="mb-3">
+                                                @{
+                                                    var photos = duyuru.Files.Where(f => f.FileType == "Photo").ToList();
+                                                    var miniPhotoIndex = duyuru.MiniFotoIndex ?? 0;
+                                                }
+                                                
+                                                @if (photos.Any() && miniPhotoIndex < photos.Count)
+                                                {
+                                                    <div class="mini-photo-preview mb-2">
+                                                        <img src="@photos[miniPhotoIndex].FilePath" 
+                                                             alt="@photos[miniPhotoIndex].FileName"
+                                                             class="mini-photo-thumbnail" />
+                                                    </div>
+                                                }
+                                                
+                                                <small class="text-muted">
+                                                    <i class="fas fa-paperclip me-1"></i>
+                                                    @duyuru.Files.Count dosya ekli
+                                                </small>
+                                            </div>
+                                        }
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="@Url.Action("Detay", new { id = duyuru.Id })" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-eye me-1"></i>Detay
+                                            </a>
+                                            
+                                            @if (User.IsInRole("Admin"))
+                                            {
+                                                <div class="btn-group" role="group">
+                                                    <button type="button" class="btn btn-outline-warning btn-sm edit-btn" 
+                                                            data-id="@duyuru.Id" data-baslik="@duyuru.Baslik" 
+                                                            data-aciklama="@duyuru.Aciklama">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm" 
+                                                            onclick="deleteDuyuru(@duyuru.Id, '@duyuru.Baslik')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Henüz duyuru eklenmemiş</h5>
+                            <p class="text-muted">İlk duyuruyu eklemek için yukarıdaki "Yeni Duyuru" butonuna tıklayın.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Yeni Duyuru Modal -->
+@if (User.IsInRole("Admin"))
+{
+    <div class="modal fade" id="addDuyuruModal" tabindex="-1" aria-labelledby="addDuyuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDuyuruModalLabel">
+                        <i class="fas fa-plus me-2"></i>Yeni Duyuru Ekle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addDuyuruForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="Baslik" class="form-label">Başlık *</label>
+                            <input type="text" class="form-control" id="Baslik" name="Baslik" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="Aciklama" class="form-label">Açıklama *</label>
+                            <textarea class="form-control" id="Aciklama" name="Aciklama" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fotolar" class="form-label">Fotoğraflar</label>
+                                    <input type="file" class="form-control" id="fotolar" name="fotolar" multiple accept="image/*">
+                                    <small class="text-muted">Birden fazla fotoğraf seçebilirsiniz</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dosyalar" class="form-label">Dosyalar</label>
+                                    <input type="file" class="form-control" id="dosyalar" name="dosyalar" multiple>
+                                    <small class="text-muted">PDF, Word, Excel vb. dosyalar</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duyuru Düzenleme Modal -->
+    <div class="modal fade" id="editDuyuruModal" tabindex="-1" aria-labelledby="editDuyuruModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDuyuruModalLabel">
+                        <i class="fas fa-edit me-2"></i>Duyuru Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editDuyuruForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="editDuyuruId" name="Id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editBaslik" class="form-label">Başlık *</label>
+                            <input type="text" class="form-control" id="editBaslik" name="Baslik" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editAciklama" class="form-label">Açıklama *</label>
+                            <textarea class="form-control" id="editAciklama" name="Aciklama" rows="5" required></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editFotolar" class="form-label">Yeni Fotoğraflar</label>
+                                    <input type="file" class="form-control" id="editFotolar" name="fotolar" multiple accept="image/*">
+                                    <small class="text-muted">Yeni fotoğraflar ekleyebilirsiniz</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editDosyalar" class="form-label">Yeni Dosyalar</label>
+                                    <input type="file" class="form-control" id="editDosyalar" name="dosyalar" multiple>
+                                    <small class="text-muted">Yeni dosyalar ekleyebilirsiniz</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Güncelle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Silme Onay Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Duyuru Silme Onayı
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-question-circle fa-3x text-warning"></i>
+                </div>
+                <h6 id="deleteConfirmMessage" class="mb-2"></h6>
+                <p id="deleteConfirmDetails" class="text-muted small mb-0"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>Evet, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Kalem butonuna tıklandığında edit modal'ını aç
+        $(document).on('click', '.edit-btn', function() {
+            console.log('Edit button clicked!');
+            var duyuruId = $(this).data('id');
+            var baslik = $(this).data('baslik');
+            var aciklama = $(this).data('aciklama');
+            
+            console.log('Duyuru data:', { duyuruId, baslik, aciklama });
+            
+            // Modal'ı doldur
+            $('#editDuyuruId').val(duyuruId);
+            $('#editBaslik').val(baslik);
+            $('#editAciklama').val(aciklama);
+            
+            // Modal'ı aç
+            $('#editDuyuruModal').modal('show');
+            console.log('Modal should be open now');
+        });
+        
+        // Yeni duyuru ekleme formu
+        $('#addDuyuruForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: '@Url.Action("Add")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('Success response:', response);
+                    if (response.success) {
+                        $('#addDuyuruModal').modal('hide');
+                        $('#addDuyuruForm')[0].reset();
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Duyuru eklenirken bir hata oluştu.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Error response:', xhr.responseText);
+                    console.log('Status:', status);
+                    console.log('Error:', error);
+                    alert('Duyuru eklenirken bir hata oluştu. Console\'u kontrol edin.');
+                }
+            });
+        });
+        
+        // Duyuru düzenleme formu
+        $('#editDuyuruForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            var duyuruId = $('#editDuyuruId').val();
+            
+            console.log('Edit form gönderiliyor - duyuruId:', duyuruId);
+            console.log('Form data:', formData);
+            
+            $.ajax({
+                url: '@Url.Action("Edit")/' + duyuruId,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    console.log('Edit success response:', response);
+                    if (response.success) {
+                        $('#editDuyuruModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Duyuru güncellenirken bir hata oluştu.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Edit error response:', xhr.responseText);
+                    console.log('Edit error status:', status);
+                    console.log('Edit error:', error);
+                    alert('Duyuru güncellenirken bir hata oluştu. Console\'u kontrol edin.');
+                }
+            });
+        });
+        
+        function deleteDuyuru(id, baslik) {
+            $('#deleteConfirmMessage').text('"' + baslik + '" başlıklı duyuruyu silmek istediğinizden emin misiniz?');
+            $('#deleteConfirmDetails').text('Bu işlem geri alınamaz.');
+            $('#confirmDeleteBtn').data('id', id); // Confirm button'a ID'yi gönder
+            $('#deleteConfirmModal').modal('show');
+        }
+
+        $('#confirmDeleteBtn').on('click', function() {
+            var duyuruId = $(this).data('id');
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("Delete")',
+                type: 'POST',
+                data: { id: duyuruId, __RequestVerificationToken: token },
+                success: function(response) {
+                    if (response.success) {
+                        $('#deleteConfirmModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(response.message || 'Duyuru silinirken bir hata oluştu.');
+                    }
+                },
+                error: function() {
+                    alert('Duyuru silinirken bir hata oluştu.');
+                }
+            });
+        });
+    </script>
+}

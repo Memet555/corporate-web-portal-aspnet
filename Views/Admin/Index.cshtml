@@ -1,0 +1,266 @@
+@model List<WebPortal.Models.User>
+@{
+    ViewData["Title"] = "Kullanıcı Yönetimi";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Sayfa Başlığı -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-users me-2"></i>Kullanıcı Yönetimi</h2>
+                    <p class="text-muted mb-0">Sistem kullanıcılarını yönetin, yeni kullanıcı ekleyin ve mevcut kullanıcıları düzenleyin.</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Ekle
+                </button>
+            </div>
+
+            <!-- Bildirimler -->
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Kullanıcı Listesi -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Kullanıcı Listesi (@Model.Count kullanıcı)</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th><i class="fas fa-user me-1"></i>Kullanıcı Adı</th>
+                                        <th><i class="fas fa-shield-alt me-1"></i>Rol</th>
+                                        <th><i class="fas fa-toggle-on me-1"></i>Durum</th>
+                                        <th><i class="fas fa-calendar me-1"></i>Oluşturma Tarihi</th>
+                                        <th><i class="fas fa-cogs me-1"></i>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var user in Model)
+                                    {
+                                        <tr>
+                                            <td>@user.Id</td>
+                                            <td>
+                                                <strong>@user.Username</strong>
+                                                @if (user.Username == User.Identity.Name)
+                                                {
+                                                    <span class="badge bg-info ms-2">Siz</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (user.Role == "Admin")
+                                                {
+                                                    <span class="badge bg-danger">Admin</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Kullanıcı</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (user.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Aktif</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">Pasif</span>
+                                                }
+                                            </td>
+                                            <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <!-- Aktif/Pasif Değiştir -->
+                                                    <form asp-action="ToggleUser" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@user.Id" />
+                                                        <button type="submit" class="btn btn-sm @(user.IsActive ? "btn-outline-warning" : "btn-outline-success")" 
+                                                                title="@(user.IsActive ? "Pasif Yap" : "Aktif Yap")">
+                                                            <i class="fas @(user.IsActive ? "fa-pause" : "fa-play")"></i>
+                                                        </button>
+                                                    </form>
+
+                                                    <!-- Şifre Sıfırla -->
+                                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                                            data-bs-toggle="modal" data-bs-target="#resetPasswordModal" 
+                                                            data-user-id="@user.Id" data-username="@user.Username"
+                                                            title="Şifre Sıfırla">
+                                                        <i class="fas fa-key"></i>
+                                                    </button>
+
+                                                    <!-- Sil -->
+                                                    @if (user.Username != User.Identity.Name)
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                data-bs-toggle="modal" data-bs-target="#deleteUserModal" 
+                                                                data-user-id="@user.Id" data-username="@user.Username"
+                                                                title="Kullanıcıyı Sil">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Henüz kullanıcı bulunamadı</h5>
+                            <p class="text-muted">İlk kullanıcıyı eklemek için yukarıdaki butonu kullanın.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı Ekleme Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="CreateUser" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Yeni Kullanıcı Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="Username" class="form-label">Kullanıcı Adı</label>
+                        <input type="text" class="form-control" name="Username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Şifre</label>
+                        <input type="password" class="form-control" name="Password" minlength="6" required>
+                        <div class="form-text">En az 6 karakter olmalıdır.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Role" class="form-label">Rol</label>
+                        <select class="form-select" name="Role" required>
+                            <option value="User">Kullanıcı</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kullanıcı Ekle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Şifre Sıfırlama Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="ResetPassword" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="resetUserId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-key me-2"></i>Şifre Sıfırla</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong id="resetUsername"></strong> kullanıcısının şifresini sıfırlıyorsunuz.</p>
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Yeni Şifre</label>
+                        <input type="password" class="form-control" name="newPassword" minlength="6" required>
+                        <div class="form-text">En az 6 karakter olmalıdır.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-warning">Şifreyi Sıfırla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Kullanıcı Silme Modal -->
+<div class="modal fade" id="deleteUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="DeleteUser" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteUserId" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Kullanıcı Sil</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong id="deleteUsername"></strong> kullanıcısını silmek istediğinizden emin misiniz?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Bu işlem geri alınamaz. Kullanıcının tüm verileri silinecektir.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-danger">Kullanıcıyı Sil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Şifre sıfırlama modal
+    document.getElementById('resetPasswordModal').addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var userId = button.getAttribute('data-user-id');
+        var username = button.getAttribute('data-username');
+        
+        document.getElementById('resetUserId').value = userId;
+        document.getElementById('resetUsername').textContent = username;
+    });
+
+    // Kullanıcı silme modal
+    document.getElementById('deleteUserModal').addEventListener('show.bs.modal', function (event) {
+        var button = event.relatedTarget;
+        var userId = button.getAttribute('data-user-id');
+        var username = button.getAttribute('data-username');
+        
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteUsername').textContent = username;
+    });
+
+    // Alert'leri otomatik kapat
+    setTimeout(function() {
+        var alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            if (alert.classList.contains('fade')) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        });
+    }, 5000);
+</script>
+}

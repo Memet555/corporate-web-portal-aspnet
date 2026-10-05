@@ -1,0 +1,572 @@
+@model IEnumerable<WebPortal.Models.PortalBolum>
+@{
+    ViewData["Title"] = "Portal Bölümleri Yönetimi";
+}
+
+@Html.AntiForgeryToken()
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a href="/" class="btn btn-outline-secondary me-3"><i class="fas fa-arrow-left me-1"></i> Ana Sayfa</a>
+            <h1 class="display-6 mb-0"><i class="fas fa-th-large me-2"></i>Portal Bölümleri Yönetimi</h1>
+        </div>
+        <div class="d-flex align-items-center">
+            <button class="btn btn-primary btn-lg rounded-circle" id="open-add-section-modal-btn" title="Yeni Bölüm Ekle" data-bs-toggle="modal" data-bs-target="#addSectionModal" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2rem;">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+    <div id="portal-section-list">
+        @if (Model.Any())
+        {
+            <div class="row g-3">
+                @foreach (var portalSection in Model)
+                {
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm portal-section-card">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0 fw-bold">@portalSection.Baslik</h5>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary me-1 edit-section-btn" data-id="@portalSection.Id" title="Düzenle">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger delete-section-btn" data-id="@portalSection.Id" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="card-text text-muted flex-grow-1">
+                                    @(string.IsNullOrEmpty(portalSection.Aciklama) ? "Açıklama eklenmemiş." : portalSection.Aciklama)
+                                </p>
+                                <div class="mt-auto">
+                                    <a href="/PortalBolum/Detay/@portalSection.Id" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-folder-open me-1"></i>Dosyaları Görüntüle
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center">
+                <p>Henüz portal bölümü eklenmemiş.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Bölüm Ekle Modalı -->
+<div class="modal fade" id="addSectionModal" tabindex="-1" aria-labelledby="addSectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="add-section-form">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addSectionModalLabel">Yeni Bölüm Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="section-name" class="form-label">Bölüm Adı</label>
+                        <input type="text" class="form-control" id="section-name" name="Baslik" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="section-description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="section-description" name="Aciklama" rows="2"></textarea>
+                    </div>
+                    <div id="add-section-error" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bölüm Düzenle Modalı -->
+<div class="modal fade" id="editSectionModal" tabindex="-1" aria-labelledby="editSectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="edit-section-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="edit-section-id" name="Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editSectionModalLabel">Bölümü Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-section-name" class="form-label">Bölüm Adı</label>
+                        <input type="text" class="form-control" id="edit-section-name" name="Baslik" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-section-description" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="edit-section-description" name="Aciklama" rows="2"></textarea>
+                    </div>
+                    
+                                         <!-- Dosyalar Bölümü -->
+                     <div class="mb-3">
+                         <div class="d-flex justify-content-between align-items-center mb-2">
+                             <label class="form-label mb-0">Yüklenmiş Dosyalar</label>
+                             <button type="button" class="btn btn-primary btn-sm" id="add-file-to-section-btn">
+                                 <i class="fas fa-plus me-1"></i>Dosya Ekle
+                             </button>
+                         </div>
+                         <div id="edit-section-files" class="border rounded p-3 bg-light">
+                             <div class="text-center text-muted">
+                                 <i class="fas fa-spinner fa-spin"></i> Dosyalar yükleniyor...
+                             </div>
+                         </div>
+                     </div>
+                    
+                    <div id="edit-section-error" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        </div>
+         </div>
+ </div>
+ 
+ <!-- Dosya Ekle Modalı -->
+ <div class="modal fade" id="addFileToSectionModal" tabindex="-1" aria-labelledby="addFileToSectionModalLabel" aria-hidden="true">
+     <div class="modal-dialog">
+         <div class="modal-content">
+             <form id="add-file-to-section-form" enctype="multipart/form-data">
+                 @Html.AntiForgeryToken()
+                 <input type="hidden" id="add-file-section-name" name="SectionName" />
+                 <input type="hidden" id="add-file-portal-bolum-id" name="PortalBolumId" />
+                 <div class="modal-header">
+                     <h5 class="modal-title" id="addFileToSectionModalLabel">Dosya Ekle</h5>
+                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                 </div>
+                 <div class="modal-body">
+                     <div class="mb-3">
+                         <label for="add-file-input" class="form-label">Dosya</label>
+                         <input type="file" class="form-control" id="add-file-input" name="File" required />
+                     </div>
+                     <div class="mb-3">
+                         <label for="add-file-description" class="form-label">Açıklama</label>
+                         <textarea class="form-control" id="add-file-description" name="Description" rows="2"></textarea>
+                     </div>
+                     <div id="add-file-error" class="alert alert-danger d-none"></div>
+                 </div>
+                 <div class="modal-footer">
+                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                     <button type="submit" class="btn btn-primary">Kaydet</button>
+                 </div>
+             </form>
+         </div>
+     </div>
+ </div>
+ 
+ <!-- Onay Modalı -->
+ <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+     <div class="modal-dialog modal-sm">
+         <div class="modal-content">
+             <div class="modal-header">
+                 <h5 class="modal-title" id="confirmModalLabel">
+                     <i class="fas fa-exclamation-triangle text-warning me-2"></i>Onay
+                 </h5>
+                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+             </div>
+             <div class="modal-body text-center">
+                 <p id="confirm-message" class="mb-0"></p>
+             </div>
+             <div class="modal-footer justify-content-center">
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                 <button type="button" class="btn btn-danger" id="confirm-yes-btn">
+                     <i class="fas fa-trash me-1"></i>Evet, Sil
+                 </button>
+             </div>
+         </div>
+     </div>
+ </div>
+ 
+ @section Scripts {
+<script>
+$(function() {
+         // Portal bölümü ekleme formu
+     var isAddingSection = false;
+     $(document).on('submit', '#add-section-form', function(e) {
+         e.preventDefault();
+         e.stopPropagation();
+         
+         if (isAddingSection) {
+             return false; // Çift gönderimi engelle
+         }
+         
+         isAddingSection = true;
+         
+         // Submit butonunu devre dışı bırak
+         var submitBtn = $(this).find('button[type="submit"]');
+         submitBtn.prop('disabled', true);
+         submitBtn.text('Ekleniyor...');
+         
+         var formData = new FormData(this);
+         $.ajax({
+             url: '/PortalBolumAdmin/Add',
+             type: 'POST',
+             data: formData,
+             processData: false,
+             contentType: false,
+             success: function(res) {
+                 if (res.success) {
+                     $('#addSectionModal').modal('hide');
+                     $('#add-section-form')[0].reset();
+                     location.reload();
+                 } else {
+                     alert(res.message || 'Bölüm eklenirken bir hata oluştu.');
+                 }
+             },
+             error: function() {
+                 alert('Bölüm eklenirken bir hata oluştu.');
+             },
+             complete: function() {
+                 // Submit butonunu tekrar aktif et
+                 submitBtn.prop('disabled', false);
+                 submitBtn.text('Ekle');
+                 isAddingSection = false;
+             }
+         });
+     });
+
+    // Portal bölümü düzenleme
+    $(document).on('click', '.edit-section-btn', function() {
+        var id = $(this).data('id');
+        $.get('/PortalBolumAdmin/Get/' + id, function(data) {
+            console.log('Gelen data:', data); // Debug için
+            $('#edit-section-id').val(data.id);
+            $('#edit-section-name').val(data.name);
+            $('#edit-section-description').val(data.description);
+            
+                         // Dosyaları göster
+             var filesContainer = $('#edit-section-files');
+             if (data.files && data.files.length > 0) {
+                 var filesHtml = '<div class="row g-2">';
+                 data.files.forEach(function(file) {
+                     var fileName = file.fileName;
+                     if (fileName.includes("_")) {
+                         fileName = fileName.substring(fileName.indexOf("_") + 1);
+                     }
+                     fileName = fileName.replace(/\.[^/.]+$/, ""); // Uzantıyı kaldır
+                     
+                     filesHtml += '<div class="col-12">';
+                     filesHtml += '<div class="d-flex align-items-center p-2 border rounded bg-white">';
+                     filesHtml += '<i class="fas fa-file me-2 text-primary"></i>';
+                     filesHtml += '<div class="flex-grow-1">';
+                     filesHtml += '<div class="fw-bold">' + fileName + '</div>';
+                     filesHtml += '<small class="text-muted">' + (file.description || '') + '</small>';
+                     filesHtml += '</div>';
+                     filesHtml += '<div class="d-flex align-items-center">';
+                     filesHtml += '<small class="text-muted me-2">' + new Date(file.uploadDate).toLocaleDateString('tr-TR') + '</small>';
+                     filesHtml += '<button type="button" class="btn btn-danger btn-sm delete-file-btn" data-id="' + file.id + '" data-section="' + data.name + '" title="Sil">';
+                     filesHtml += '<i class="fas fa-trash"></i>';
+                     filesHtml += '</button>';
+                     filesHtml += '</div>';
+                     filesHtml += '</div>';
+                     filesHtml += '</div>';
+                 });
+                 filesHtml += '</div>';
+                 filesContainer.html(filesHtml);
+             } else {
+                 filesContainer.html('<div class="text-center text-muted"><i class="fas fa-folder-open me-2"></i>Bu bölüme henüz dosya yüklenmemiş.</div>');
+             }
+            
+            $('#editSectionModal').modal('show');
+        });
+    });
+
+         // Portal bölümü düzenleme formu
+     var isEditingSection = false;
+     $(document).on('submit', '#edit-section-form', function(e) {
+         e.preventDefault();
+         e.stopPropagation();
+         
+         if (isEditingSection) {
+             return false; // Çift gönderimi engelle
+         }
+         
+         isEditingSection = true;
+         
+         // Submit butonunu devre dışı bırak
+         var submitBtn = $(this).find('button[type="submit"]');
+         submitBtn.prop('disabled', true);
+         submitBtn.text('Kaydediliyor...');
+         
+         var formData = new FormData(this);
+         $.ajax({
+             url: '/PortalBolumAdmin/Edit',
+             type: 'POST',
+             data: formData,
+             processData: false,
+             contentType: false,
+             success: function(res) {
+                 if (res.success) {
+                     $('#editSectionModal').modal('hide');
+                     location.reload();
+                 } else {
+                     alert(res.message || 'Bölüm düzenlenirken bir hata oluştu.');
+                 }
+             },
+             error: function() {
+                 alert('Bölüm düzenlenirken bir hata oluştu.');
+             },
+             complete: function() {
+                 // Submit butonunu tekrar aktif et
+                 submitBtn.prop('disabled', false);
+                 submitBtn.text('Kaydet');
+                 isEditingSection = false;
+             }
+         });
+     });
+
+         // Portal bölümü silme
+     $(document).on('click', '.delete-section-btn', function() {
+         var id = $(this).data('id');
+         var sectionName = $(this).closest('.card').find('.card-title').text();
+         
+         $('#confirm-message').text('"' + sectionName + '" bölümünü silmek istediğinize emin misiniz?');
+         $('#confirmModal').modal('show');
+         
+         $('#confirm-yes-btn').off('click').on('click', function() {
+             var token = $('input[name="__RequestVerificationToken"]').val();
+             $.ajax({
+                 url: '/PortalBolumAdmin/Delete/' + id,
+                 type: 'POST',
+                 data: { 
+                     __RequestVerificationToken: token 
+                 },
+                 success: function(res) {
+                     if (res.success) {
+                         $('#confirmModal').modal('hide');
+                         location.reload();
+                     } else {
+                         alert(res.message || 'Silme işlemi başarısız oldu.');
+                     }
+                 },
+                 error: function(xhr, status, error) {
+                     console.log('Silme hatası:', xhr.responseText);
+                     alert('Silme işlemi sırasında bir hata oluştu: ' + error);
+                 }
+             });
+         });
+     });
+
+         // Modal kapatıldığında formu temizle (document level event)
+     $(document).on('hidden.bs.modal', '#addSectionModal, #editSectionModal', function() {
+         $(this).find('form')[0].reset();
+         $(this).find('.alert-danger').addClass('d-none');
+         // Submit butonlarını tekrar aktif et
+         $(this).find('button[type="submit"]').prop('disabled', false);
+         // Modal backdrop'u temizle
+         $('.modal-backdrop').remove();
+         $('body').removeClass('modal-open').css('padding-right', '');
+     });
+
+         // Modal açıldığında backdrop'u düzgün ayarla
+     $(document).on('shown.bs.modal', '#addSectionModal, #editSectionModal', function() {
+         // Modal'ın düzgün görünmesini sağla
+         $(this).css('display', 'block');
+         $(this).addClass('show');
+         $('body').addClass('modal-open');
+     });
+
+     // Dosya ekleme butonuna tıklandığında
+     $(document).on('click', '#add-file-to-section-btn', function() {
+         var sectionName = $('#edit-section-name').val();
+         var sectionId = $('#edit-section-id').val();
+         $('#add-file-section-name').val(sectionName);
+         $('#add-file-portal-bolum-id').val(sectionId); // PortalBolumId'yi doğru şekilde ayarla
+         $('#addFileToSectionModal').modal('show');
+     });
+
+           // Dosya ekleme formu
+      var isAddingFile = false;
+      $(document).on('submit', '#add-file-to-section-form', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          if (isAddingFile) {
+              return false; // Çift gönderimi engelle
+          }
+          
+          isAddingFile = true;
+          
+          // Submit butonunu devre dışı bırak
+          var submitBtn = $(this).find('button[type="submit"]');
+          submitBtn.prop('disabled', true);
+          submitBtn.text('Ekleniyor...');
+          
+          var formData = new FormData(this);
+          
+          $.ajax({
+              url: '/PortalBolum/Add',
+              type: 'POST',
+              data: formData,
+              processData: false,
+              contentType: false,
+              success: function(res) {
+                  if (res.success) {
+                      $('#addFileToSectionModal').modal('hide');
+                      $('#add-file-to-section-form')[0].reset();
+                      
+                      // Dosyaları yeniden yükle
+                      var sectionId = $('#edit-section-id').val();
+                      $.get('/PortalBolumAdmin/Get/' + sectionId, function(data) {
+                          var filesContainer = $('#edit-section-files');
+                          if (data.files && data.files.length > 0) {
+                              var filesHtml = '<div class="row g-2">';
+                              data.files.forEach(function(file) {
+                                  var fileName = file.fileName;
+                                  if (fileName.includes("_")) {
+                                      fileName = fileName.substring(fileName.indexOf("_") + 1);
+                                  }
+                                  fileName = fileName.replace(/\.[^/.]+$/, "");
+                                  
+                                  filesHtml += '<div class="col-12">';
+                                  filesHtml += '<div class="d-flex align-items-center p-2 border rounded bg-white">';
+                                  filesHtml += '<i class="fas fa-file me-2 text-primary"></i>';
+                                  filesHtml += '<div class="flex-grow-1">';
+                                  filesHtml += '<div class="fw-bold">' + fileName + '</div>';
+                                  filesHtml += '<small class="text-muted">' + (file.description || '') + '</small>';
+                                  filesHtml += '</div>';
+                                  filesHtml += '<div class="d-flex align-items-center">';
+                                  filesHtml += '<small class="text-muted me-2">' + new Date(file.uploadDate).toLocaleDateString('tr-TR') + '</small>';
+                                  filesHtml += '<button type="button" class="btn btn-danger btn-sm delete-file-btn" data-id="' + file.id + '" data-section="' + data.name + '" title="Sil">';
+                                  filesHtml += '<i class="fas fa-trash"></i>';
+                                  filesHtml += '</button>';
+                                  filesHtml += '</div>';
+                                  filesHtml += '</div>';
+                                  filesHtml += '</div>';
+                              });
+                              filesHtml += '</div>';
+                              filesContainer.html(filesHtml);
+                          } else {
+                              filesContainer.html('<div class="text-center text-muted"><i class="fas fa-folder-open me-2"></i>Bu bölüme henüz dosya yüklenmemiş.</div>');
+                          }
+                      });
+                  } else {
+                      // Hata mesajını göster
+                      var errorMessage = res.message || 'Dosya eklenirken bir hata oluştu.';
+                      $('#add-file-error').removeClass('d-none').text(errorMessage);
+                  }
+              },
+              error: function(xhr, status, error) {
+                  var errorMessage = 'Dosya eklenirken bir hata oluştu.';
+                  if (xhr.responseJSON && xhr.responseJSON.message) {
+                      errorMessage = xhr.responseJSON.message;
+                  }
+                  $('#add-file-error').removeClass('d-none').text(errorMessage);
+              },
+              complete: function() {
+                  // Submit butonunu tekrar aktif et
+                  submitBtn.prop('disabled', false);
+                  submitBtn.text('Ekle');
+                  isAddingFile = false;
+              }
+          });
+      });
+
+     // Dosya silme butonuna tıklandığında
+     $(document).on('click', '.delete-file-btn', function() {
+         var fileId = $(this).data('id');
+         var sectionName = $(this).data('section');
+         var fileName = $(this).closest('.d-flex').find('.fw-bold').text();
+         
+         $('#confirm-message').text('"' + fileName + '" dosyasını silmek istediğinize emin misiniz?');
+         $('#confirmModal').modal('show');
+         
+         $('#confirm-yes-btn').off('click').on('click', function() {
+             var token = $('input[name="__RequestVerificationToken"]').val();
+             $.ajax({
+                 url: '/PortalBolum/Delete',
+                 type: 'POST',
+                 data: { 
+                     id: fileId, 
+                     sectionName: sectionName,
+                     __RequestVerificationToken: token 
+                 },
+                 success: function(res) {
+                     if (res.success) {
+                         $('#confirmModal').modal('hide');
+                         // Dosyaları yeniden yükle
+                         var sectionId = $('#edit-section-id').val();
+                         $.get('/PortalBolumAdmin/Get/' + sectionId, function(data) {
+                             var filesContainer = $('#edit-section-files');
+                             if (data.files && data.files.length > 0) {
+                                 var filesHtml = '<div class="row g-2">';
+                                 data.files.forEach(function(file) {
+                                     var fileName = file.fileName;
+                                     if (fileName.includes("_")) {
+                                         fileName = fileName.substring(fileName.indexOf("_") + 1);
+                                     }
+                                     fileName = fileName.replace(/\.[^/.]+$/, "");
+                                     
+                                     filesHtml += '<div class="col-12">';
+                                     filesHtml += '<div class="d-flex align-items-center p-2 border rounded bg-white">';
+                                     filesHtml += '<i class="fas fa-file me-2 text-primary"></i>';
+                                     filesHtml += '<div class="flex-grow-1">';
+                                     filesHtml += '<div class="fw-bold">' + fileName + '</div>';
+                                     filesHtml += '<small class="text-muted">' + (file.description || '') + '</small>';
+                                     filesHtml += '</div>';
+                                     filesHtml += '<div class="d-flex align-items-center">';
+                                     filesHtml += '<small class="text-muted me-2">' + new Date(file.uploadDate).toLocaleDateString('tr-TR') + '</small>';
+                                     filesHtml += '<button type="button" class="btn btn-danger btn-sm delete-file-btn" data-id="' + file.id + '" data-section="' + data.name + '" title="Sil">';
+                                     filesHtml += '<i class="fas fa-trash"></i>';
+                                     filesHtml += '</button>';
+                                     filesHtml += '</div>';
+                                     filesHtml += '</div>';
+                                     filesHtml += '</div>';
+                                 });
+                                 filesHtml += '</div>';
+                                 filesContainer.html(filesHtml);
+                             } else {
+                                 filesContainer.html('<div class="text-center text-muted"><i class="fas fa-folder-open me-2"></i>Bu bölüme henüz dosya yüklenmemiş.</div>');
+                             }
+                         });
+                     } else {
+                         alert(res.message || 'Silme işlemi başarısız oldu.');
+                     }
+                 },
+                 error: function(xhr, status, error) {
+                     console.log('Dosya silme hatası:', xhr.responseText);
+                     alert('Silme işlemi sırasında bir hata oluştu: ' + error);
+                 }
+             });
+         });
+     });
+
+     // Dosya ekleme modal kapatıldığında formu temizle
+     $(document).on('hidden.bs.modal', '#addFileToSectionModal', function() {
+         $(this).find('form')[0].reset();
+         $(this).find('.alert-danger').addClass('d-none');
+         // Submit butonunu tekrar aktif et
+         $(this).find('button[type="submit"]').prop('disabled', false);
+     });
+
+     // Onay modalı kapatıldığında event handler'ı temizle
+     $(document).on('hidden.bs.modal', '#confirmModal', function() {
+         $('#confirm-yes-btn').off('click');
+     });
+ });
+</script>
+<style>
+.portal-section-card {
+    border-radius: 0.75rem;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+.portal-section-card:hover {
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.10);
+    transform: translateY(-2px);
+}
+</style>
+} 

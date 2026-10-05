@@ -1,0 +1,15 @@
+@{
+    ViewData["Title"] = "Genel Ayarlar";
+}
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h2 class="display-4">@ViewData["Title"]</h2>
+        <i class="fas fa-cog fa-5x text-muted my-4"></i>
+        <p class="lead">Henüz genel ayar bulunmamaktadır.</p>
+        @if (User.IsInRole("Admin"))
+        {
+            <a href="#" class="btn btn-primary mt-3">Ayarları Düzenle</a>
+        }
+    </div>
+</div>

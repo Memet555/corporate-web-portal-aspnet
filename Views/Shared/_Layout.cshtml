@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Web Portal</title>
+    @RenderSection("Styles", required: false)
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/custom.css" asp-append-version="true" />
+    
+
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h3 class="bossa-logo">Bossa</h3>
+        </div>
+        <div id="sidebar-menu">
+            <!-- Menu will be loaded here by JavaScript -->
+        </div>
+
+    </div>
+
+    <div class="content">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <!-- Arama Formu - Sola kaydırıldı -->
+                <div class="flex-grow-1">
+                    <form class="d-flex" asp-controller="Search" asp-action="Index" method="get" id="global-search-form">
+                        <div class="input-group" style="max-width: 520px; position: relative;">
+                            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                            <input id="global-search-input" name="q" class="form-control" type="search" placeholder="Ara... (Ctrl+K)" aria-label="Global search" autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" id="clear-search" title="Temizle"><i class="fas fa-times"></i></button>
+                            <button type="submit" class="btn btn-primary" title="Ara"><i class="fas fa-search"></i></button>
+                            
+                            <!-- Arama Önerileri -->
+                            <div id="search-suggestions" class="search-suggestions" style="display: none;">
+                                <!-- Öneriler JavaScript ile doldurulacak -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Giriş ve Kullanıcı Profili Alanı -->
+                <div class="d-flex align-items-center">
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-user-circle fa-2x me-1"></i>
+                            <strong>@User.Identity.Name</strong>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" id="userMenuToggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Kullanıcı menüsü"></button>
+                                <ul class="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="userMenuToggle">
+                                    <li>
+                                        <form asp-controller="Login" asp-action="Logout" method="post">
+                                            <button type="submit" class="dropdown-item text-danger fw-semibold">
+                                                <i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <a href="/Login/Index" class="btn btn-primary">Giriş Yap</a>
+                    }
+                </div>
+            </div>
+        </nav>
+
+        <main role="main" class="main-content p-3">
+            @RenderBody()
+        </main>
+
+        <footer class="footer">
+            <div class="container">
+                &copy; Buğra hocam candır
+            </div>
+        </footer>
+    </div>
+
+    <partial name="_DeleteConfirmationModal" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#deleteConfirmationModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var id = button.data('id');
+                var url = button.data('url');
+                var confirmBtn = $('#confirmDeleteButton');
+                confirmBtn.attr('href', url.replace('-1', id));
+            });
+
+            // Search UX improvements
+            $(document).on('keydown', function (e) {
+                if (e.ctrlKey && e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    $('#global-search-input').focus();
+                }
+            });
+            $('#clear-search').on('click', function () {
+                $('#global-search-input').val('').focus();
+                $('#search-suggestions').hide();
+            });
+            $('#global-search-input').on('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    $(this).val('');
+                    $(this).blur();
+                    $('#search-suggestions').hide();
+                }
+            });
+
+            // Search suggestions
+            let searchTimeout;
+            $('#global-search-input').on('input', function () {
+                const term = $(this).val().trim();
+                
+                clearTimeout(searchTimeout);
+                
+                if (term.length < 2) {
+                    $('#search-suggestions').hide();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(function() {
+                    $.ajax({
+                        url: '/Search/Suggest',
+                        type: 'GET',
+                        data: { term: term },
+                        success: function(suggestions) {
+                            if (suggestions && suggestions.length > 0) {
+                                let html = '';
+                                suggestions.forEach(function(item) {
+                                    const iconClass = item.icon || 'fas fa-file';
+                                    const typeText = item.type === 'menu' ? 'Menü' : 
+                                                   item.type === 'report' ? 'Rapor' : 
+                                                   item.type === 'announcement' ? 'Duyuru' : 'Sayfa';
+                                    
+                                    html += `
+                                        <div class="suggestion-item" data-url="${item.url}">
+                                            <i class="${iconClass} me-2"></i>
+                                            <span class="suggestion-title">${item.title}</span>
+                                            <small class="suggestion-type">${typeText}</small>
+                                        </div>
+                                    `;
+                                });
+                                $('#search-suggestions').html(html).show();
+                            } else {
+                                $('#search-suggestions').hide();
+                            }
+                        },
+                        error: function() {
+                            $('#search-suggestions').hide();
+                        }
+                    });
+                }, 300);
+            });
+
+            // Suggestion click
+            $(document).on('click', '.suggestion-item', function() {
+                const url = $(this).data('url');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+
+            // Hide suggestions when clicking outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#global-search-form').length) {
+                    $('#search-suggestions').hide();
+                }
+            });
+
+            // Ensure profile dropdown works reliably
+            var btn = document.getElementById('userMenuToggle');
+            if (btn) {
+                try { new bootstrap.Dropdown(btn); } catch (e) { /* ignore */ }
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

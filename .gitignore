@@ -1,0 +1,17 @@
+﻿## .NET Core
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.userosscache
+*.sln.docstates
+
+## Logs and DB
+*.log
+*.sqlite
+*.db
+
+## Uploads temporary files
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep

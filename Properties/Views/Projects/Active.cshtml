@@ -1,0 +1,45 @@
+
+@{
+    ViewData["Title"] = "Aktif Projeler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="text-center p-4 p-md-5 border rounded-3 bg-light">
+        <style>
+            .empty-state-icon {
+                width: 100px;
+                height: 100px;
+                color: #6c757d;
+            }
+            .page-title {
+                font-weight: 300;
+            }
+            .btn-add-data {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            .btn-add-data:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+            }
+        </style>
+
+        <!-- SVG Icon: Briefcase for Projects -->
+        <svg class="empty-state-icon mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 14.15v4.07a2.25 2.25 0 0 1-2.25 2.25H5.998a2.25 2.25 0 0 1-2.25-2.25v-4.07a2.25 2.25 0 0 1 .97-1.732l5.998-3.464a2.25 2.25 0 0 1 2.56 0l5.998 3.464a2.25 2.25 0 0 1 .97 1.732Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+        </svg>
+
+        <h2 class="page-title display-5">@ViewData["Title"]</h2>
+        <p class="lead text-muted mt-2">Henüz gösterilecek bir proje bulunmuyor.</p>
+
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="mt-4">
+                <a href="@Url.Action("Create", "Projects")" class="btn btn-primary btn-lg btn-add-data">
+                    Yeni Proje Ekle
+                </a>
+            </div>
+        }
+    </div>
+</div>

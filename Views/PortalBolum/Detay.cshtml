@@ -1,0 +1,303 @@
+@model WebPortal.Models.PortalBolum
+@{
+    ViewData["Title"] = Model.Baslik + " - Portal Bölümü";
+}
+
+@Html.AntiForgeryToken()
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="/" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Ana Sayfa</a>
+        <h1 class="h3 mb-0 text-primary"><i class="fas fa-folder-open me-2"></i>@Model.Baslik</h1>
+    </div>
+    
+    @if (!string.IsNullOrEmpty(Model.Aciklama))
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <p class="mb-0 text-muted">@Model.Aciklama</p>
+            </div>
+        </div>
+    }
+    
+    <div class="card shadow-sm">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-file-alt me-2"></i>Dosyalar</h5>
+                @if (User.IsInRole("Admin"))
+                {
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPortalFileModal">
+                        <i class="fas fa-plus me-1"></i>Yeni Dosya Ekle
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="card-body">
+            <div id="files-container">
+                @await Html.PartialAsync("~/Views/Shared/_PortalBolumDosyaListPartial.cshtml", Model.Dosyalar, new ViewDataDictionary(ViewData) { { "SectionName", Model.Baslik } })
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Onay Modalı -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Dosya Silme Onayı
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-question-circle fa-3x text-warning"></i>
+                </div>
+                <h6 id="confirm-delete-message" class="mb-2"></h6>
+                <p class="text-muted small mb-0">Bu işlem geri alınamaz.</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-yes-btn">
+                    <i class="fas fa-trash me-1"></i>Evet, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+<style>
+.card {
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+}
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+.table th {
+    font-weight: 600;
+    color: #495057;
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+.table td, .table th {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+}
+
+@section Scripts {
+<script>
+$(function() {
+    // Dosya ekleme formu (partial view'daki modal için)
+    var isAddingPortalFile = false;
+    $(document).off('submit', '#add-portal-file-form').on('submit', '#add-portal-file-form', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (isAddingPortalFile) {
+            return false; // Çift gönderimi engelle
+        }
+        
+        isAddingPortalFile = true;
+        
+        // Submit butonunu devre dışı bırak
+        var submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true);
+        submitBtn.text('Ekleniyor...');
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '/PortalBolum/Add',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                if (res.success) {
+                    $('#addPortalFileModal').modal('hide');
+                    $('#add-portal-file-form')[0].reset();
+                    
+                    // Dosyaları yeniden yükle
+                    $.get('/PortalBolum/List', { section: '@Model.Baslik' }, function(data) {
+                        $('#files-container').html(data);
+                    });
+                } else {
+                    alert(res.message || 'Dosya eklenirken bir hata oluştu.');
+                }
+            },
+            error: function() {
+                alert('Dosya eklenirken bir hata oluştu.');
+            },
+            complete: function() {
+                // Submit butonunu tekrar aktif et
+                submitBtn.prop('disabled', false);
+                submitBtn.text('Kaydet');
+                isAddingPortalFile = false;
+            }
+        });
+    });
+
+    // Düzenleme butonuna tıklandığında
+    $(document).off('click', '.edit-portal-file-btn').on('click', '.edit-portal-file-btn', function(e) {
+        e.preventDefault();
+        var fileId = $(this).data('id');
+        var sectionName = $(this).data('section');
+        
+        // Dosya bilgilerini al
+        $.get('/PortalBolum/GetFile', { id: fileId }, function(data) {
+            if (data.success) {
+                var file = data.file;
+                
+                // Modal'ı doldur
+                $('#edit-portal-file-id').val(file.id);
+                $('#edit-portal-file-section').val(file.sectionName);
+                $('#edit-portal-file-description').val(file.description);
+                
+                // Mevcut dosya adını göster
+                var fileName = file.fileName;
+                if (fileName.includes("_")) {
+                    fileName = fileName.substring(fileName.indexOf("_") + 1);
+                }
+                fileName = fileName.replace(/\.[^/.]+$/, ""); // Uzantıyı kaldır
+                $('#current-file-name').text(fileName);
+                
+                // Modal'ı aç
+                $('#editPortalFileModal').modal('show');
+            }
+        });
+    });
+
+    // Düzenleme formu gönderildiğinde
+    var isEditingPortalFile = false;
+    $(document).off('submit', '#edit-portal-file-form').on('submit', '#edit-portal-file-form', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (isEditingPortalFile) {
+            return false; // Çift gönderimi engelle
+        }
+        
+        isEditingPortalFile = true;
+        
+        // Submit butonunu devre dışı bırak
+        var submitBtn = $(this).find('button[type="submit"]');
+        submitBtn.prop('disabled', true);
+        submitBtn.text('Kaydediliyor...');
+        
+        var formData = new FormData(this);
+        
+        $.ajax({
+            url: '/PortalBolum/Edit',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(res) {
+                if (res.success) {
+                    $('#editPortalFileModal').modal('hide');
+                    $('#edit-portal-file-form')[0].reset();
+                    
+                    // Dosyaları yeniden yükle
+                    $.get('/PortalBolum/List', { section: '@Model.Baslik' }, function(data) {
+                        $('#files-container').html(data);
+                    });
+                } else {
+                    alert(res.message || 'Dosya düzenlenirken bir hata oluştu.');
+                }
+            },
+            error: function() {
+                alert('Dosya düzenlenirken bir hata oluştu.');
+            },
+            complete: function() {
+                // Submit butonunu tekrar aktif et
+                submitBtn.prop('disabled', false);
+                submitBtn.text('Kaydet');
+                isEditingPortalFile = false;
+            }
+        });
+    });
+
+    // Silme butonuna tıklandığında
+    $(document).off('click', '.delete-portal-file-btn').on('click', '.delete-portal-file-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        var fileId = $(this).data('id');
+        var sectionName = $(this).data('section');
+        var fileName = $(this).closest('tr').find('td:first a').text().trim();
+        
+        // Onay modalını göster
+        $('#confirm-delete-message').text('"' + fileName + '" dosyasını silmek istediğinizden emin misiniz?');
+        $('#confirmDeleteModal').modal('show');
+        
+        // Onay butonuna tıklandığında
+        $('#confirm-delete-yes-btn').off('click').on('click', function() {
+            // Anti-forgery token'ı al
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
+            $.ajax({
+                url: '/PortalBolum/Delete',
+                type: 'POST',
+                data: { 
+                    id: fileId, 
+                    sectionName: sectionName,
+                    __RequestVerificationToken: token
+                },
+                success: function(res) {
+                    if (res.success) {
+                        $('#confirmDeleteModal').modal('hide');
+                        // Dosyaları yeniden yükle
+                        $.get('/PortalBolum/List', { section: '@Model.Baslik' }, function(data) {
+                            $('#files-container').html(data);
+                        });
+                    } else {
+                        alert(res.message || 'Silme işlemi başarısız oldu.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.log('Silme hatası:', xhr.responseText);
+                    alert('Silme işlemi sırasında bir hata oluştu: ' + error);
+                }
+            });
+        });
+    });
+
+    // Modal kapatıldığında formu temizle (document level event)
+    $(document).on('hidden.bs.modal', '#addPortalFileModal, #editPortalFileModal', function() {
+        $(this).find('form')[0].reset();
+        $(this).find('.alert-danger').addClass('d-none');
+        // Modal backdrop'u temizle
+        $('.modal-backdrop').remove();
+        $('body').removeClass('modal-open').css('padding-right', '');
+    });
+
+    // Modal açıldığında backdrop'u düzgün ayarla
+    $(document).on('shown.bs.modal', '#addPortalFileModal, #editPortalFileModal', function() {
+        // Modal'ın düzgün görünmesini sağla
+        $(this).css('display', 'block');
+        $(this).addClass('show');
+        $('body').addClass('modal-open');
+    });
+
+    // Onay modalı kapatıldığında event handler'ı temizle
+    $(document).on('hidden.bs.modal', '#confirmDeleteModal', function() {
+        $('#confirm-delete-yes-btn').off('click');
+    });
+});
+</script>
+} 

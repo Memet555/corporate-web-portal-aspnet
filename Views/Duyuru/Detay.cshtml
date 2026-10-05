@@ -1,0 +1,913 @@
+@model WebPortal.Models.Duyuru
+@{
+    ViewData["Title"] = Model.Baslik;
+}
+
+<!-- CSS Dosyasını Dahil Et -->
+<link rel="stylesheet" href="~/css/duyuru-detail.css" />
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="duyuru-detail-container">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <nav aria-label="breadcrumb" class="breadcrumb-nav">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Duyuru")"><i class="fas fa-bullhorn"></i> Duyurular</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">@Model.Baslik</li>
+                    </ol>
+                </nav>
+            </div>
+            <div class="duyuru-meta">
+                <span class="badge bg-primary me-2">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    @Model.Tarih.ToString("dd.MM.yyyy")
+                </span>
+                <span class="badge bg-info">
+                    <i class="fas fa-clock me-1"></i>
+                    @Model.Tarih.ToString("HH:mm")
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="duyuru-detail-container">
+    <div class="duyuru-main-content">
+        <!-- Main Content Area -->
+        <div class="content-card">
+            <!-- Header -->
+            <div class="content-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="header-content">
+                        <h1 class="content-title">@Model.Baslik</h1>
+                        <div class="author-info">
+                            <div class="author-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="author-details">
+                                <span class="author-name">@Model.CreatedBy</span>
+                                <span class="author-role">Yönetici</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#editDuyuruModal">
+                                <i class="fas fa-edit me-2"></i>Düzenle
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Body -->
+            <div class="content-body">
+                @if (!string.IsNullOrEmpty(Model.Aciklama))
+                {
+                    <div class="description-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-align-left me-2"></i>Açıklama
+                        </h3>
+                        <div class="description-content">
+                            @Model.Aciklama
+                        </div>
+                    </div>
+                }
+
+                <!-- Files & Photos Section -->
+                @if (Model.Files != null && Model.Files.Any())
+                {
+                    <div class="files-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-paperclip me-2"></i>Ekler
+                        </h3>
+                        
+                        <!-- Photos Carousel -->
+                        @if (Model.Files.Any(f => f.FileType == "Photo"))
+                        {
+                            <div class="photos-section">
+                                <h5 class="section-subtitle">
+                                    <i class="fas fa-images me-2"></i>Fotoğraflar
+                                </h5>
+                                
+                                @{
+                                    var photos = Model.Files.Where(f => f.FileType == "Photo").ToList();
+                                }
+                                
+                                <div class="carousel-container">
+                                    <div id="photoCarousel" class="carousel slide" data-bs-ride="carousel">
+                                        <div class="carousel-indicators">
+                                            @for (int i = 0; i < photos.Count; i++)
+                                            {
+                                                <button type="button" data-bs-target="#photoCarousel" data-bs-slide-to="@i" 
+                                                        class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : "false")" 
+                                                        aria-label="Slide @(i + 1)"></button>
+                                            }
+                                        </div>
+                                        
+                                        <div class="carousel-inner">
+                                            @for (int i = 0; i < photos.Count; i++)
+                                            {
+                                                var photo = photos[i];
+                                                <div class="carousel-item @(i == 0 ? "active" : "")">
+                                                    <div class="carousel-image-container">
+                                                        <img src="@photo.FilePath" class="carousel-image" alt="@photo.FileName" 
+                                                             onclick="openImageModal('@photo.FilePath', '@photo.FileName', '@(photo.FileSize.HasValue ? FormatFileSize(photo.FileSize.Value) : "")')" />
+                                                        <div class="carousel-overlay">
+                                                            <div class="carousel-caption">
+                                                                <h6 class="image-title">@photo.FileName</h6>
+                                                                <button class="btn btn-light btn-sm view-carousel-image-btn" 
+                                                                        data-index="@i" 
+                                                                        data-filename="@photo.FileName" 
+                                                                        data-filesize="@photo.FileSize">
+                                                                    <i class="fas fa-expand-alt me-1"></i>Büyüt
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        
+                                        @if (photos.Count > 1)
+                                        {
+                                            <button class="carousel-control-prev" type="button" data-bs-target="#photoCarousel" data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Önceki</span>
+                                            </button>
+                                            <button class="carousel-control-next" type="button" data-bs-target="#photoCarousel" data-bs-slide="next">
+                                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                                <span class="visually-hidden">Sonraki</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Documents Section -->
+                        @if (Model.Files.Any(f => f.FileType != "Photo"))
+                        {
+                            <div class="documents-section">
+                                <h5 class="section-subtitle">
+                                    <i class="fas fa-file-alt me-2"></i>Dosyalar
+                                </h5>
+                                <div class="documents-list">
+                                    @foreach (var file in Model.Files.Where(f => f.FileType != "Photo"))
+                                    {
+                                        <div class="document-item">
+                                            <div class="document-icon">
+                                                <i class="fas fa-file"></i>
+                                            </div>
+                                            <div class="document-info">
+                                                <div class="document-name">@file.FileName</div>
+                                                <div class="document-meta">
+                                                    <span class="file-size">@(file.FileSize.HasValue ? FormatFileSize(file.FileSize.Value) : "")</span>
+                                                    <span class="upload-date">@file.UploadedAt.ToString("dd.MM.yyyy")</span>
+                                                </div>
+                                            </div>
+                                            <div class="document-actions">
+                                                <a href="@file.FilePath" target="_blank" class="btn btn-outline-primary btn-sm" title="İndir">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Footer -->
+            <div class="content-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="footer-info">
+                        <span class="text-muted">
+                            <i class="fas fa-eye me-1"></i>Görüntülenme: <strong>@(Model.Files?.Count ?? 0)</strong>
+                        </span>
+                    </div>
+                    <div>
+                        <a href="@Url.Action("Index", "Duyuru")" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar-card">
+            <div class="sidebar-header">
+                <h4 class="sidebar-title">
+                    <i class="fas fa-info-circle me-2"></i>Bilgi
+                </h4>
+            </div>
+            <div class="sidebar-content">
+                <div class="info-item">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                    <div class="info-text">
+                        <strong>Oluşturulma Tarihi</strong>
+                        <span>@Model.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                </div>
+                
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="info-item">
+                        <i class="fas fa-edit text-success"></i>
+                        <div class="info-text">
+                            <strong>Son Güncelleme</strong>
+                            <span>@Model.UpdatedAt.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                }
+                
+                <div class="info-item">
+                    <i class="fas fa-eye text-info"></i>
+                    <div class="info-text">
+                        <strong>Toplam Dosya</strong>
+                        <span>@(Model.Files?.Count ?? 0) dosya</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Dosya Silme Onayı
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-question-circle fa-3x text-warning"></i>
+                </div>
+                <h6 id="deleteConfirmMessage" class="mb-2"></h6>
+                <p id="deleteConfirmDetails" class="text-muted small mb-0"></p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>İptal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-1"></i>Evet, Sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Helper function for file size formatting -->
+@functions {
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}
+
+<!-- Düzenleme Modal -->
+<div class="modal fade" id="editDuyuruModal" tabindex="-1" aria-labelledby="editDuyuruModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content">
+            <form id="editDuyuruForm" method="post" action="/Duyuru/Edit" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="edit-duyuru-id" name="Id" value="@Model.Id" />
+                <input type="hidden" name="MiniFotoIndex" value="@(Model.MiniFotoIndex ?? 0)" />
+                
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDuyuruModalLabel">
+                        <i class="fas fa-edit me-2"></i>Duyuru Düzenle
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="editBaslik" class="form-label">Başlık</label>
+                                <input type="text" class="form-control form-control-lg" id="editBaslik" name="Baslik" value="@Model.Baslik" required />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="editTarih" class="form-label">Tarih</label>
+                                <input type="date" class="form-control" id="editTarih" name="Tarih" value="@Model.Tarih.ToString("yyyy-MM-dd")" required />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editAciklama" class="form-label">Açıklama</label>
+                        <textarea class="form-control" id="editAciklama" name="Aciklama" rows="4" required>@Model.Aciklama</textarea>
+                    </div>
+                    
+                    <!-- Mevcut dosyalar ve mini fotoğraf seçimi -->
+                    <div class="mb-4">
+                        <h6 class="text-primary fw-bold mb-3">
+                            <i class="fas fa-folder-open me-2"></i>Mevcut Dosyalar ve Mini Fotoğraf Seçimi
+                        </h6>
+                        <div id="mevcut-dosyalar-container">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                                <p class="mt-2">Dosyalar yükleniyor...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yeni dosya ekleme -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editFotolar" class="form-label">Yeni Fotoğraflar</label>
+                                <input type="file" class="form-control" id="editFotolar" name="fotolar" accept="image/*" multiple />
+                                <div id="edit-foto-preview" class="mt-2"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editDosyalar" class="form-label">Yeni Dosyalar</label>
+                                <input type="file" class="form-control" id="editDosyalar" name="dosyalar" multiple />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="edit-duyuru-error" class="alert alert-danger d-none"></div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Kapat
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Gelişmiş Fotoğraf Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="imageModalLabel">
+                    <i class="fas fa-image me-2"></i>Fotoğraf Görüntüleyici
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="position-relative">
+                    <!-- Resim Carousel -->
+                    <div id="imageCarousel" class="carousel slide" data-bs-ride="false">
+                        <div class="carousel-inner">
+                            <!-- Resimler buraya dinamik olarak eklenecek -->
+                        </div>
+                        
+                        <!-- Carousel Kontrolleri -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Önceki</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Sonraki</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Resim Bilgileri -->
+                    <div class="position-absolute bottom-0 start-0 w-100 bg-dark bg-opacity-75 text-white p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1" id="modalImageName">Resim Adı</h6>
+                                <small id="modalImageSize">Boyut bilgisi</small>
+                            </div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-light btn-sm" id="fullscreenBtn" title="Tam Ekran">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" id="downloadBtn" title="İndir">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                    <div class="text-muted">
+                        <small id="imageCounter">1 / 5</small>
+                    </div>
+                    <div>
+
+                        <a href="" id="modalImageLink" target="_blank" class="btn btn-outline-info btn-sm me-2">
+                            <i class="fas fa-external-link-alt me-1"></i>Yeni Sekmede Aç
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal ve JavaScript için gerekli CSS -->
+<style>
+/* Modal Styles */
+.modal-fullscreen {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+.modal-fullscreen .modal-content {
+    height: 100vh;
+    border-radius: 0;
+}
+
+.modal-fullscreen .modal-body {
+    height: calc(100vh - 120px);
+}
+
+#imageCarousel .carousel-item img {
+    max-height: 70vh;
+    object-fit: contain;
+}
+
+/* Modal carousel için özel CSS */
+#imageCarousel .carousel-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+}
+
+#imageCarousel .carousel-item.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+#imageCarousel .carousel-item:not(.active) {
+    opacity: 0;
+    z-index: 1;
+}
+
+#imageCarousel .carousel-inner {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Form Controls */
+.form-control {
+    border-radius: 12px;
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+}
+
+.form-control-lg {
+    font-size: 1.1rem;
+    padding: 1rem 1.25rem;
+}
+
+.form-label {
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Photo Card Styles */
+.photo-card {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.photo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.photo-card .badge {
+    z-index: 2;
+}
+
+/* Button Styles */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+
+<!-- JavaScript -->
+<script>
+// jQuery yüklenmesini bekle
+function waitForJQuery() {
+    if (typeof $ !== 'undefined') {
+        // jQuery yüklendi, şimdi kodları çalıştır
+        initializeDuyuruFunctions();
+    } else {
+        setTimeout(waitForJQuery, 100);
+    }
+}
+
+// jQuery yüklenmesini bekle
+waitForJQuery();
+
+function initializeDuyuruFunctions() {
+    $(document).ready(function() {
+        // Sayfa yüklendiğinde animasyonları başlat
+        $('.content-card').addClass('fade-in');
+        $('.sidebar-card').addClass('slide-in-right');
+        
+        // Düzenleme modal'ı açıldığında mevcut dosyaları yükle
+        $('#editDuyuruModal').on('shown.bs.modal', function () {
+            loadMevcutDosyalar();
+        });
+        
+        // Düzenleme formu submit
+        $('#editDuyuruForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            
+            // Mini fotoğraf index'ini form'a ekle
+            var selectedIndex = $('.photo-card.border-success').data('index');
+            if (selectedIndex !== undefined) {
+                formData.set('miniFotoIndex', selectedIndex);
+            }
+            
+            $.ajax({
+                url: '/Duyuru/Edit',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    if (res.success) {
+                        $('#editDuyuruModal').modal('hide');
+                        location.reload();
+                    } else {
+                        $('#edit-duyuru-error').removeClass('d-none').text(res.message || 'Bir hata oluştu.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#edit-duyuru-error').removeClass('d-none').text('Bir hata oluştu: ' + error);
+                }
+            });
+        });
+        
+        // Modal kapandığında formu sıfırla
+        $('#editDuyuruModal').on('hidden.bs.modal', function () {
+            $('#editDuyuruForm')[0].reset();
+            $('#edit-duyuru-error').addClass('d-none');
+            $('#mevcut-dosyalar-container').html('<div class="text-center text-muted"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Dosyalar yükleniyor...</p></div>');
+        });
+        
+        // Mini fotoğraf seçimi için event listener
+        $(document).on('click', '.select-mini-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var index = parseInt($(this).data('index'));
+            selectMiniPhoto(index);
+        });
+        
+        // Fotoğraf kartına tıklama
+        $(document).on('click', '.photo-card', function(e) {
+            // Eğer buton tıklanmışsa, kart tıklamasını durdur
+            if ($(e.target).closest('.btn').length > 0) {
+                return;
+            }
+            var index = parseInt($(this).data('index'));
+            selectMiniPhoto(index);
+        });
+        
+        // Resim büyütme butonuna tıklama
+        $(document).on('click', '.view-image-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var index = parseInt($(this).data('index'));
+            var filename = $(this).data('filename');
+            var filesize = $(this).data('filesize');
+            
+            // Fotoğrafları al
+            var photos = @Html.Raw(Json.Serialize(Model.Files?.Where(f => f.FileType == "Photo") ?? Enumerable.Empty<AnnouncementFile>()));
+            if (photos.length > index) {
+                var photo = photos[index];
+                openImageModal(photo.FilePath, photo.FileName, formatFileSize(photo.FileSize));
+            }
+        });
+        
+        // Carousel resim büyütme butonuna tıklama
+        $(document).on('click', '.view-carousel-image-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var index = parseInt($(this).data('index'));
+            var filename = $(this).data('filename');
+            var filesize = $(this).data('filesize');
+            
+            // Fotoğrafları al
+            var photos = @Html.Raw(Json.Serialize(Model.Files?.Where(f => f.FileType == "Photo") ?? Enumerable.Empty<AnnouncementFile>()));
+            if (photos.length > index) {
+                var photo = photos[index];
+                openImageModal(photo.FilePath, filename, filesize);
+            }
+        });
+        
+        // Modal event listener'ları
+        $('#imageModal').on('shown.bs.modal', function () {
+            // Modal açıldığında ek işlemler gerekirse buraya eklenebilir
+        });
+        
+        $('#imageModal').on('hidden.bs.modal', function () {
+            // Modal kapandığında ek işlemler gerekirse buraya eklenebilir
+        });
+        
+
+        
+        // Tam ekran butonuna tıklama
+        $(document).on('click', '#fullscreenBtn', function() {
+            toggleFullscreen();
+        });
+        
+        // İndirme butonuna tıklama
+        $(document).on('click', '#downloadBtn', function() {
+            var activeImage = $('#imageCarousel .carousel-item.active img');
+            var imageSrc = activeImage.attr('src');
+            var imageName = $('#modalImageName').text();
+            
+            // Resmi indir
+            var link = document.createElement('a');
+            link.href = imageSrc;
+            link.download = imageName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    });
+}
+
+// Mevcut dosyaları yükle
+function loadMevcutDosyalar() {
+    var duyuruId = @Model.Id;
+    
+    $.ajax({
+        url: '/Duyuru/GetDuyuruFiles',
+        type: 'GET',
+        data: { duyuruId: duyuruId },
+        success: function(files) {
+            displayMevcutDosyalar(files);
+        },
+        error: function(xhr, status, error) {
+            $('#mevcut-dosyalar-container').html('<div class="alert alert-danger">Dosyalar yüklenirken hata oluştu: ' + error + '</div>');
+        }
+    });
+}
+
+// Mevcut dosyaları göster
+function displayMevcutDosyalar(files) {
+    if (!files || files.length === 0) {
+        $('#mevcut-dosyalar-container').html('<div class="text-center text-muted"><i class="fas fa-folder-open fa-2x"></i><p class="mt-2">Henüz dosya yüklenmemiş</p></div>');
+        return;
+    }
+    
+    var html = '<div class="row">';
+    
+    // Fotoğraflar ve Mini Fotoğraf Seçimi
+    var photos = files.filter(f => f.fileType === 'Photo');
+    if (photos.length > 0) {
+        var currentMiniIndex = @(Model.MiniFotoIndex ?? 0);
+        console.log('Mevcut mini fotoğraf index:', currentMiniIndex);
+        console.log('Toplam fotoğraf sayısı:', photos.length);
+        
+        html += '<div class="col-12 mb-3">';
+        html += '<h6 class="text-primary fw-bold"><i class="fas fa-images me-2"></i>Fotoğraflar ve Mini Fotoğraf Seçimi</h6>';
+        html += '<div class="row" style="position: relative; z-index: 1;">';
+        photos.forEach(function(photo, index) {
+            var isSelected = index === currentMiniIndex;
+            var cardClass = isSelected ? 'border-success border-3' : 'border-light';
+            var selectedBadge = isSelected ? '<span class="badge bg-success position-absolute top-0 start-0 m-1" style="z-index: 2;"><i class="fas fa-star"></i></span>' : '';
+            
+            console.log('Fotoğraf ' + index + ':', photo.fileName, 'Seçili mi:', isSelected);
+            
+                    html += '<div class="col-md-3 mb-2" style="position: relative; z-index: 1;">';
+        html += '<div class="card ' + cardClass + ' photo-card" data-index="' + index + '" style="cursor:pointer; position: relative; z-index: 1;">';
+            html += selectedBadge;
+            html += '<img src="' + photo.filePath + '" class="card-img-top" alt="' + photo.fileName + '" style="height:120px;object-fit:cover;" />';
+            html += '<div class="card-body p-2">';
+            html += '<small class="text-muted d-block">' + photo.fileName + '</small>';
+            html += '<div class="btn-group btn-group-sm w-100 mt-1">';
+            html += '<button type="button" class="btn btn-outline-info btn-sm view-image-btn" data-index="' + index + '" data-filename="' + photo.fileName + '" data-filesize="' + formatFileSize(photo.fileSize) + '" title="Büyüt"><i class="fas fa-search-plus"></i></button>';
+            html += '<button type="button" class="btn btn-outline-primary btn-sm select-mini-btn" data-index="' + index + '" title="Mini fotoğraf yap"><i class="fas fa-star"></i></button>';
+            html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteDuyuruFile(' + photo.id + ');"><i class="fas fa-trash"></i></button>';
+            html += '</div>';
+            html += '</div></div></div>';
+        });
+        html += '</div>';
+        html += '<div class="mt-2 p-2 bg-light rounded">';
+        html += '<small class="text-muted"><i class="fas fa-info-circle me-1"></i>Yeşil çerçeveli fotoğraf şu anki mini fotoğraftır. Yıldız butonuna tıklayarak değiştirebilirsiniz.</small>';
+        html += '</div>';
+        html += '</div>';
+    }
+    
+    // Diğer dosyalar
+    var documents = files.filter(f => f.fileType !== 'Photo' && f.fileType !== 'MiniPhoto');
+    if (documents.length > 0) {
+        html += '<div class="col-12 mb-3">';
+        html += '<h6 class="text-info fw-bold"><i class="fas fa-file me-2"></i>Dosyalar</h6>';
+        html += '<div class="list-group">';
+        documents.forEach(function(doc) {
+            html += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+            html += '<div><i class="fas fa-file text-secondary me-2"></i>' + doc.fileName + '</div>';
+            html += '<div class="btn-group btn-group-sm">';
+            html += '<a href="' + doc.filePath + '" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fas fa-download"></i></a>';
+            html += '<button type="button" class="btn btn-outline-danger btn-sm" onclick="deleteDuyuruFile(' + doc.id + ')"><i class="fas fa-trash"></i></button>';
+            html += '</div></div>';
+        });
+        html += '</div></div>';
+    }
+    
+    html += '</div>';
+    $('#mevcut-dosyalar-container').html(html);
+}
+
+// Duyuru dosyasını sil
+function deleteDuyuruFile(fileId) {
+    // Tüm dosyaları JavaScript'e yükle
+    var allFiles = @Html.Raw(Json.Serialize(Model.Files ?? Enumerable.Empty<AnnouncementFile>()));
+    var file = allFiles.find(f => f.Id === fileId);
+    
+    if (!file) {
+        showAlert('Dosya bulunamadı.', 'warning');
+        return;
+    }
+
+    $('#deleteConfirmMessage').text('Bu dosyayı silmek istediğinizden emin misiniz?');
+    $('#deleteConfirmDetails').text('Dosya Adı: ' + file.FileName + ', Dosya Boyutu: ' + formatFileSize(file.FileSize));
+    $('#confirmDeleteBtn').data('file-id', fileId);
+    $('#deleteConfirmModal').modal('show');
+}
+
+
+
+// Dosya boyutunu formatla
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Mini fotoğraf seç
+function selectMiniPhoto(index) {
+    console.log('Mini fotoğraf seçiliyor, index:', index);
+    
+    // Tüm kartlardan seçim işaretini kaldır
+    $('.photo-card').removeClass('border-success border-3').addClass('border-light');
+    $('.photo-card .badge').remove();
+    
+    // Seçilen kartı işaretle
+    var selectedCard = $('.photo-card[data-index="' + index + '"]');
+    if (selectedCard.length > 0) {
+        selectedCard.removeClass('border-light').addClass('border-success border-3');
+        selectedCard.prepend('<span class="badge bg-success position-absolute top-0 start-0 m-1"><i class="fas fa-star"></i></span>');
+        
+        // Mini fotoğraf index'ini güncelle
+        $('input[name="MiniFotoIndex"]').val(index);
+        
+        console.log('Mini fotoğraf index güncellendi:', index);
+        showAlert('Mini fotoğraf seçildi! Index: ' + index, 'success');
+    } else {
+        console.error('Seçilen kart bulunamadı, index:', index);
+        showAlert('Hata: Seçilen fotoğraf bulunamadı!', 'danger');
+    }
+}
+
+// Alert göster
+function showAlert(message, type) {
+    var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">';
+    alertHtml += message;
+    alertHtml += '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>';
+    alertHtml += '</div>';
+    
+    // Mevcut alert'leri temizle
+    $('.alert').remove();
+    
+    // Yeni alert'i ekle
+    $('#edit-duyuru-error').after(alertHtml);
+    
+    // 3 saniye sonra otomatik kapat
+    setTimeout(function() {
+        $('.alert').fadeOut();
+    }, 3000);
+}
+
+// Gelişmiş resim modal'ını aç
+function openImageModal(imagePath, imageName, imageSize = '') {
+    // Tüm fotoğrafları al
+    var photos = @Html.Raw(Json.Serialize(Model.Files?.Where(f => f.FileType == "Photo").Select((f, i) => new { 
+        index = i, 
+        path = f.FilePath, 
+        name = f.FileName, 
+        size = f.FileSize 
+    }) ?? Enumerable.Empty<object>()));
+    
+    if (photos.length === 0) {
+        showAlert('Görüntülenecek fotoğraf bulunamadı!', 'warning');
+        return;
+    }
+    
+    // Carousel'i temizle
+    var carouselInner = $('#imageCarousel .carousel-inner');
+    carouselInner.empty();
+    
+    // Fotoğrafları carousel'e ekle
+    photos.forEach(function(photo, index) {
+        var isActive = photo.path === imagePath ? 'active' : '';
+        var carouselItem = `
+            <div class="carousel-item ${isActive}">
+                <img src="${photo.path}" class="d-block w-100 h-100" alt="${photo.name}" style="object-fit: contain; max-height: 70vh;">
+            </div>
+        `;
+        carouselInner.append(carouselItem);
+    });
+    
+    // Modal bilgilerini güncelle
+    $('#modalImageName').text(imageName);
+    $('#modalImageSize').text(imageSize || 'Boyut bilgisi yok');
+    $('#imageCounter').text('1 / ' + photos.length);
+    $('#modalImageLink').attr('href', imagePath);
+    
+    // Modal'ı aç
+    $('#imageModal').modal('show');
+    
+    // Carousel event listener'ları
+    $('#imageCarousel').on('slid.bs.carousel', function (e) {
+        var activeIndex = $(e.target).find('.carousel-item.active').index();
+        var activePhoto = photos[activeIndex];
+        $('#modalImageName').text(activePhoto.name);
+        $('#modalImageSize').text(formatFileSize(activePhoto.size) || 'Boyut bilgisi yok');
+        $('#imageCounter').text((activeIndex + 1) + ' / ' + photos.length);
+        $('#modalImageLink').attr('href', activePhoto.path);
+    });
+}
+
+
+
+// Tam ekran modu
+function toggleFullscreen() {
+    var modal = $('#imageModal');
+    var modalDialog = modal.find('.modal-dialog');
+    
+    if (modal.hasClass('fullscreen')) {
+        modal.removeClass('fullscreen');
+        modalDialog.removeClass('modal-fullscreen');
+        $('#fullscreenBtn').html('<i class="fas fa-expand"></i>');
+    } else {
+        modal.addClass('fullscreen');
+        modalDialog.addClass('modal-fullscreen');
+        $('#fullscreenBtn').html('<i class="fas fa-compress"></i>');
+    }
+}
+
+
+</script> 

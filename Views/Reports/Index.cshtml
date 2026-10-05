@@ -1,0 +1,17 @@
+@{
+    ViewData["Title"] = "Raporlar";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="display-6">Raporlar</h1>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            @await Html.PartialAsync("~/Views/Shared/_ReportManagementPartial.cshtml", new ViewDataDictionary(ViewData) { { "Section", "All" } })
+        </div>
+    </div>
+</div>
